@@ -347,12 +347,36 @@
     .btn-toggle-view:hover { border-color: var(--primary-light); color: var(--primary); }
     .btn-toggle-view.active { background: var(--primary); border-color: var(--primary); color: #fff; }
     .placed-item.compact {
-      padding: 4px 6px;
-      gap: 4px;
+      padding: 3px;
+      gap: 0;
+      border-left: none;
+      background: none;
+      position: relative;
+      justify-content: center;
     }
     .placed-item.compact .placed-item-name,
     .placed-item.compact .placed-item-meta { display: none; }
-    .placed-item.compact .placed-item-icon { width: 26px; height: 26px; font-size: 1rem; }
+    .placed-item.compact .placed-item-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.4rem;
+      border-radius: 8px;
+    }
+    .placed-item.compact .btn-icon {
+      display: none;
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      font-size: 0.6rem;
+      background: var(--red);
+      color: #fff;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    .placed-item.compact:hover .btn-icon { display: flex; }
+    .placed-item.compact:hover .placed-item-icon { opacity: 0.85; }
 
     .timeline-scroll {
       overflow-x: auto;
