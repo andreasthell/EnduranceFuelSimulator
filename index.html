@@ -69,7 +69,10 @@
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      transition: width 0.22s ease, min-width 0.22s ease;
     }
+    /* Desktop collapse */
+    body.panel-collapsed .left-panel { width: 0; min-width: 0; overflow: hidden; border-right: none; }
 
     .panel-section {
       padding: 20px;
@@ -498,8 +501,8 @@
       flex-shrink: 0;
     }
 
-    /* ── Menu button (mobile only) ── */
-    .btn-menu { display: none; background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; padding: 4px 6px; margin-right: 2px; line-height: 1; flex-shrink: 0; }
+    /* ── Menu button ── */
+    .btn-menu { display: block; background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; padding: 4px 6px; margin-right: 2px; line-height: 1; flex-shrink: 0; }
 
     /* ── Panel overlay ── */
     .panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
@@ -510,7 +513,6 @@
       .summary-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 700px) {
-      .btn-menu { display: block; }
       .header-subtitle { display: none; }
       .left-panel {
         position: fixed;
@@ -1150,23 +1152,21 @@ function drawChart() {
       ctx.closePath(); ctx.fill();
     }
 
-    // Value labels below bars
-    ctx.font = 'bold 10px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    if (cv > 0) {
-      ctx.fillStyle = '#1A2340';
-      ctx.fillText(cv + 'g', cx + barW / 2, baseY + 13);
-    }
-    if (wv > 0) {
-      ctx.fillStyle = '#007b8a';
-      ctx.fillText(wv + 'ml', wx + barW / 2, baseY + 13);
+    // Value labels — only when bars are wide enough
+    if (barW >= 22) {
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      if (cv > 0) { ctx.fillStyle = '#1A2340'; ctx.fillText(cv + 'g', cx + barW / 2, baseY + 13); }
+      if (wv > 0) { ctx.fillStyle = '#007b8a'; ctx.fillText(wv + 'ml', wx + barW / 2, baseY + 13); }
     }
 
-    // X label (hour)
-    ctx.fillStyle = '#6B7A99';
-    ctx.font = '11px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('T' + (i + 1), slotX + availW / 2, baseY + 28);
+    // X label (hour) — only when slot is wide enough
+    if (slotW >= 28) {
+      ctx.fillStyle = '#6B7A99';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('T' + (i + 1), slotX + availW / 2, baseY + 28);
+    }
   }
 
   // Carbs target line — label sits in BAR_OFFSET space before first bar
@@ -1309,7 +1309,13 @@ document.getElementById('btnLang').addEventListener('click', () => { state.lang 
 function setPanelOpen(open) {
   document.body.classList.toggle('panel-open', open);
 }
-document.getElementById('btnMenu').addEventListener('click', () => setPanelOpen(!document.body.classList.contains('panel-open')));
+document.getElementById('btnMenu').addEventListener('click', () => {
+  if (window.innerWidth <= 700) {
+    setPanelOpen(!document.body.classList.contains('panel-open'));
+  } else {
+    document.body.classList.toggle('panel-collapsed');
+  }
+});
 document.getElementById('panelOverlay').addEventListener('click', () => setPanelOpen(false));
 
 // ── Source picker (bottom sheet) ──
