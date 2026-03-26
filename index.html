@@ -498,11 +498,41 @@ function syncTimeline() {
   state.timeline = newTimeline;
 }
 
+const STORAGE_KEY = 'endurance-fuel-plan';
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      raceDuration: state.raceDuration,
+      targetCarbsPerHour: state.targetCarbsPerHour,
+      sources: state.sources,
+      timeline: state.timeline,
+      nextSourceId: state.nextSourceId,
+      nextInstanceId: state.nextInstanceId,
+    }));
+  } catch (e) {}
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    if (data.raceDuration)       state.raceDuration       = data.raceDuration;
+    if (data.targetCarbsPerHour) state.targetCarbsPerHour = data.targetCarbsPerHour;
+    if (data.sources)            state.sources            = data.sources;
+    if (data.timeline)           state.timeline           = data.timeline;
+    if (data.nextSourceId)       state.nextSourceId       = data.nextSourceId;
+    if (data.nextInstanceId)     state.nextInstanceId     = data.nextInstanceId;
+  } catch (e) {}
+}
+
 function render() {
   syncTimeline();
   renderLeftPanel();
   renderMainArea();
   attachEvents();
+  saveState();
 }
 
 function renderLeftPanel() {
@@ -779,6 +809,7 @@ function attachEvents() {
 }
 
 window.addEventListener('resize', () => drawChart());
+loadState();
 render();
 </script>
 </body>
