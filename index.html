@@ -892,21 +892,21 @@ function renderMainArea() {
 
   const summaryHtml = `
     <div class="summary-grid">
-      <div class="stat-card"><div class="stat-label">Totalt kolhydrater</div><div class="stat-value">${totalCarbs}</div><div class="stat-unit">gram</div></div>
-      <div class="stat-card"><div class="stat-label">Genomsnitt kolhydrater</div><div class="stat-value">${avgCarbsPerHour}</div><div class="stat-unit">g / timme</div></div>
-      <div class="stat-card"><div class="stat-label">Total v&auml;tska</div><div class="stat-value">${totalWater}</div><div class="stat-unit">ml vatten</div></div>
-      <div class="stat-card"><div class="stat-label">Genomsnitt v&auml;tska</div><div class="stat-value">${avgWaterPerHour}</div><div class="stat-unit">ml / timme</div></div>
+      <div class="stat-card"><div class="stat-label">${t('totalCarbs')}</div><div class="stat-value">${totalCarbs}</div><div class="stat-unit">${t('grams')}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('avgCarbs')}</div><div class="stat-value">${avgCarbsPerHour}</div><div class="stat-unit">${t('gPerHour')}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('totalFluids')}</div><div class="stat-value">${totalWater}</div><div class="stat-unit">${t('mlWater')}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('avgFluids')}</div><div class="stat-value">${avgWaterPerHour}</div><div class="stat-unit">${t('mlPerHour')}</div></div>
     </div>`;
 
   const chartHtml = `
     <div class="chart-card">
       <div class="chart-header">
-        <div class="chart-title">Kolhydrater per timme</div>
+        <div class="chart-title">${t('chartTitle')}</div>
         <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--green-bar)"></div>N&aring;r m&aring;l (&ge;100%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--orange-bar)"></div>N&auml;ra (70&ndash;99%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--red-bar)"></div>Under (&lt;70%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#00ACC1"></div>Vatten (ml)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green-bar)"></div>${t('legendOnTarget')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--orange-bar)"></div>${t('legendNear')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red-bar)"></div>${t('legendBelow')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00ACC1"></div>${t('legendWater')}</div>
         </div>
       </div>
       <canvas id="barChart"></canvas>
@@ -924,15 +924,15 @@ function renderMainArea() {
       const color = COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length];
       const iconLabel = src.icon || escapeHtml(src.name[0].toUpperCase());
       const compactClass = state.compactTimeline ? ' compact' : '';
-      return `<div class="placed-item${compactClass}" draggable="true" data-action="drag-item" data-hour="${i}" data-instance-id="${item.instanceId}" style="border-left-color:${color};" title="${escapeHtml(src.name)} — ${src.carbs > 0 ? src.carbs + 'g kolh.' : ''}${src.water > 0 ? ' ' + src.water + 'ml' : ''}"><span class="placed-item-icon" style="background:${color}22;">${iconLabel}</span><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort" draggable="false">&#x2715;</button></div>`;
+      return `<div class="placed-item${compactClass}" draggable="true" data-action="drag-item" data-hour="${i}" data-instance-id="${item.instanceId}" style="border-left-color:${color};" title="${escapeHtml(src.name)} — ${src.carbs > 0 ? src.carbs + t('carbsShort') : ''}${src.water > 0 ? ' ' + src.water + 'ml' : ''}"><span class="placed-item-icon" style="background:${color}22;">${iconLabel}</span><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="${t('removeItem')}" draggable="false">&#x2715;</button></div>`;
     }).join('');
     hourCols.push(`
       <div class="hour-col">
-        <div class="hour-label">Timme ${i + 1}</div>
+        <div class="hour-label">${t('hour')} ${i + 1}</div>
         <div class="hour-carbs-badge ${badgeClass}">${hc} g</div>
         <div class="drop-zone${state.compactTimeline ? ' compact-mode' : ''}" data-hour="${i}" id="dropZone-${i}">
           ${placedItems}
-          ${items.length === 0 ? '<div class="drop-zone-hint">Dra hit</div>' : ''}
+          ${items.length === 0 ? `<div class="drop-zone-hint">${t('dragHere')}</div>` : ''}
         </div>
       </div>`);
   }
@@ -952,21 +952,21 @@ function renderMainArea() {
     totalPackCount += count;
     const totalCarbs = src.carbs * count;
     const totalWater = src.water * count;
-    const sub = [totalCarbs > 0 ? `${totalCarbs}g kolh.` : '', totalWater > 0 ? `${totalWater}ml` : ''].filter(Boolean).join(' · ');
+    const sub = [totalCarbs > 0 ? `${totalCarbs}${t('carbsShort')}` : '', totalWater > 0 ? `${totalWater}ml` : ''].filter(Boolean).join(' · ');
     const icon = src.icon || escapeHtml(src.name[0].toUpperCase());
-    return `<div class="receipt-row"><span class="receipt-name">${icon} ${escapeHtml(src.name)}</span><span class="receipt-qty">${count} st</span></div>${sub ? `<div class="receipt-sub">${sub}</div>` : ''}`;
+    return `<div class="receipt-row"><span class="receipt-name">${icon} ${escapeHtml(src.name)}</span><span class="receipt-qty">${count} ${t('pcs')}</span></div>${sub ? `<div class="receipt-sub">${sub}</div>` : ''}`;
   });
   const packHtml = `<div class="pack-card"><div class="receipt">
-    <div class="receipt-header">Packlista</div>
+    <div class="receipt-header">${t('packingList')}</div>
     <hr class="receipt-divider">
-    ${packedSources.length ? receiptRows.join('') + `<hr class="receipt-divider"><div class="receipt-total-row"><span>Totalt</span><span>${totalPackCount} st</span></div>` : '<div class="pack-empty">Inga k\u00e4llor placerade i tidslinjen</div>'}
+    ${packedSources.length ? receiptRows.join('') + `<hr class="receipt-divider"><div class="receipt-total-row"><span>${t('packTotal')}</span><span>${totalPackCount} ${t('pcs')}</span></div>` : `<div class="pack-empty">${t('noItemsPacked')}</div>`}
   </div></div>`;
 
   main.innerHTML = summaryHtml + chartHtml + `
     <div class="timeline-card">
       <div class="timeline-header">
-        <span>Tidslinje &mdash; dra n&auml;ringsk&auml;llor till timmarna</span>
-        <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? '⊞ Detaljvy' : '⊟ Kompaktvy'}</button>
+        <span>${t('timelineTitle')}</span>
+        <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? t('detailView') : t('compactView')}</button>
       </div>
       <div class="timeline-scroll"><div class="timeline-grid">${hourCols.join('')}</div></div>
     </div>` + packHtml;
@@ -1119,6 +1119,8 @@ function attachEvents() {
   if (formName)  formName.addEventListener('input',  e => { state.formData.name  = e.target.value; });
   if (formCarbs) formCarbs.addEventListener('input', e => { state.formData.carbs = e.target.value; });
   if (formWater) formWater.addEventListener('input', e => { state.formData.water = e.target.value; });
+  const btnLangEl = document.getElementById('btnLang');
+  if (btnLangEl) btnLangEl.addEventListener('click', () => { state.lang = state.lang === 'en' ? 'sv' : 'en'; render(); });
   const btnToggle = document.getElementById('btnToggleView');
   if (btnToggle) btnToggle.addEventListener('click', () => { state.compactTimeline = !state.compactTimeline; render(); });
 
