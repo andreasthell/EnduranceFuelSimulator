@@ -346,37 +346,46 @@
     }
     .btn-toggle-view:hover { border-color: var(--primary-light); color: var(--primary); }
     .btn-toggle-view.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .drop-zone.compact-mode {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 6px;
+    }
     .placed-item.compact {
       padding: 0;
       gap: 0;
       border-left: none;
       background: none;
-      display: grid;
-      grid-template: 1fr / 1fr;
+      position: relative;
       width: 80px;
       height: 80px;
+      flex-shrink: 0;
     }
     .placed-item.compact .placed-item-name,
     .placed-item.compact .placed-item-meta { display: none; }
     .placed-item.compact .placed-item-icon {
-      grid-area: 1/1;
+      position: absolute;
+      top: 0; left: 0;
       width: 80px;
       height: 80px;
-      font-size: 2.2rem;
+      font-size: 2.5rem;
       border-radius: 10px;
+      transition: opacity 0.15s;
     }
     .placed-item.compact .btn-icon {
-      grid-area: 1/1;
+      position: absolute;
+      top: 0; left: 0;
       width: 80px;
       height: 80px;
       border-radius: 10px;
-      background: rgba(198,40,40,0.82);
-      color: #fff;
-      font-size: 1.4rem;
+      font-size: 1.8rem;
+      background: var(--bg);
+      color: var(--text-muted);
       opacity: 0;
       transition: opacity 0.15s;
-      z-index: 1;
     }
+    .placed-item.compact:hover .placed-item-icon { opacity: 0; }
     .placed-item.compact:hover .btn-icon { opacity: 1; }
 
     .timeline-scroll {
@@ -714,7 +723,7 @@ function renderMainArea() {
       <div class="hour-col">
         <div class="hour-label">Timme ${i + 1}</div>
         <div class="hour-carbs-badge ${badgeClass}">${hc} g</div>
-        <div class="drop-zone" data-hour="${i}" id="dropZone-${i}">
+        <div class="drop-zone${state.compactTimeline ? ' compact-mode' : ''}" data-hour="${i}" id="dropZone-${i}">
           ${placedItems}
           ${items.length === 0 ? '<div class="drop-zone-hint">Dra hit</div>' : ''}
         </div>
