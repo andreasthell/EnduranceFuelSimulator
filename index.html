@@ -519,7 +519,7 @@
     .btn-pack-toggle { opacity: 0.2; font-size: 0.85rem; }
     .btn-pack-toggle.active { opacity: 1; }
 
-    /* Packing list card */
+    /* Packing list — receipt style */
     .pack-card {
       background: var(--card-bg);
       border-radius: var(--radius);
@@ -527,61 +527,66 @@
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--border);
       margin-top: 16px;
+      max-width: 380px;
     }
-    .pack-card-title {
-      font-size: 0.875rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 14px;
-    }
-    .pack-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .pack-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px;
-      background: var(--bg);
-      border-radius: 8px;
+    .receipt {
+      font-family: 'Courier New', Courier, monospace;
       font-size: 0.82rem;
+      color: var(--text);
     }
-    .pack-row-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+    .receipt-header {
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .receipt-divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 8px 0;
+    }
+    .receipt-row {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      flex-shrink: 0;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      padding: 3px 0;
     }
-    .pack-row-name {
+    .receipt-name {
+      font-weight: 700;
       flex: 1;
-      font-weight: 600;
       min-width: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .pack-row-count {
+    .receipt-qty {
       font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--text);
       white-space: nowrap;
+      flex-shrink: 0;
     }
-    .pack-row-meta {
+    .receipt-sub {
       color: var(--text-muted);
-      font-size: 0.75rem;
-      white-space: nowrap;
+      font-size: 0.74rem;
+      padding-left: 1.6em;
+      margin-bottom: 4px;
+    }
+    .receipt-total-row {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 0.86rem;
+      padding: 3px 0;
     }
     .pack-empty {
       font-size: 0.8rem;
       color: var(--text-muted);
       text-align: center;
       padding: 12px 0;
+      font-family: inherit;
     }
 
     /* Scrollbar styling */
@@ -822,26 +827,22 @@ function renderMainArea() {
       if (src && src.pack !== false) packCounts[src.id] = (packCounts[src.id] || 0) + 1;
     });
   });
-  const packRows = state.sources
-    .filter(src => src.pack !== false && packCounts[src.id])
-    .map((src, _i) => {
-      const idx = state.sources.indexOf(src);
-      const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
-      const count = packCounts[src.id];
-      const totalCarbs = src.carbs * count;
-      const totalWater = src.water * count;
-      const meta = [totalCarbs > 0 ? `${totalCarbs} g kolh.` : '', totalWater > 0 ? `${totalWater} ml` : ''].filter(Boolean).join(' &bull; ');
-      return `<div class="pack-row">
-        <div class="pack-row-icon" style="background:${color}22;">${src.icon || escapeHtml(src.name[0].toUpperCase())}</div>
-        <div class="pack-row-name">${escapeHtml(src.name)}</div>
-        ${meta ? `<div class="pack-row-meta">${meta}</div>` : ''}
-        <div class="pack-row-count">${count} st</div>
-      </div>`;
-    });
-  const packHtml = `<div class="pack-card">
-    <div class="pack-card-title">Packlista</div>
-    <div class="pack-list">${packRows.length ? packRows.join('') : '<div class="pack-empty">Inga k\u00e4llor placerade i tidslinjen</div>'}</div>
-  </div>`;
+  const packedSources = state.sources.filter(src => src.pack !== false && packCounts[src.id]);
+  let totalPackCount = 0;
+  const receiptRows = packedSources.map(src => {
+    const count = packCounts[src.id];
+    totalPackCount += count;
+    const totalCarbs = src.carbs * count;
+    const totalWater = src.water * count;
+    const sub = [totalCarbs > 0 ? `${totalCarbs}g kolh.` : '', totalWater > 0 ? `${totalWater}ml` : ''].filter(Boolean).join(' · ');
+    const icon = src.icon || escapeHtml(src.name[0].toUpperCase());
+    return `<div class="receipt-row"><span class="receipt-name">${icon} ${escapeHtml(src.name)}</span><span class="receipt-qty">${count} st</span></div>${sub ? `<div class="receipt-sub">${sub}</div>` : ''}`;
+  });
+  const packHtml = `<div class="pack-card"><div class="receipt">
+    <div class="receipt-header">Packlista</div>
+    <hr class="receipt-divider">
+    ${packedSources.length ? receiptRows.join('') + `<hr class="receipt-divider"><div class="receipt-total-row"><span>Totalt</span><span>${totalPackCount} st</span></div>` : '<div class="pack-empty">Inga k\u00e4llor placerade i tidslinjen</div>'}
+  </div></div>`;
 
   main.innerHTML = summaryHtml + chartHtml + `
     <div class="timeline-card">
