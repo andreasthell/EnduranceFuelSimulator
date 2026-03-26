@@ -462,7 +462,9 @@
       border-radius: 6px;
       border-left: 3px solid transparent;
       font-size: 0.78rem;
+      cursor: grab;
     }
+    .placed-item.dragging { opacity: 0.4; }
     .placed-item-icon {
       width: 22px;
       height: 22px;
@@ -528,7 +530,7 @@
   </svg>
   <h1>Lopp Nutritionsplanerare</h1>
   <span>Uthållighetslopp &amp; energistrategi</span>
-  <span class="version-badge">v0.4.0</span>
+  <span class="version-badge">v0.5.0</span>
 </header>
 
 <div class="app-layout">
@@ -729,7 +731,7 @@ function renderMainArea() {
       const color = COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length];
       const iconLabel = src.icon || escapeHtml(src.name[0].toUpperCase());
       const compactClass = state.compactTimeline ? ' compact' : '';
-      return `<div class="placed-item${compactClass}" style="border-left-color:${color};" title="${escapeHtml(src.name)} — ${src.carbs > 0 ? src.carbs + 'g kolh.' : ''}${src.water > 0 ? ' ' + src.water + 'ml' : ''}"><span class="placed-item-icon" style="background:${color}22;">${iconLabel}</span><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort">&#x2715;</button></div>`;
+      return `<div class="placed-item${compactClass}" draggable="true" data-action="drag-item" data-hour="${i}" data-instance-id="${item.instanceId}" style="border-left-color:${color};" title="${escapeHtml(src.name)} — ${src.carbs > 0 ? src.carbs + 'g kolh.' : ''}${src.water > 0 ? ' ' + src.water + 'ml' : ''}"><span class="placed-item-icon" style="background:${color}22;">${iconLabel}</span><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort" draggable="false">&#x2715;</button></div>`;
     }).join('');
     hourCols.push(`
       <div class="hour-col">
@@ -878,6 +880,7 @@ function drawChart() {
 }
 
 let dragSourceId = null;
+let dragItem = null; // { instanceId, fromHour } when moving a placed item
 
 function attachEvents() {
   const durInput = document.getElementById('inputDuration');
@@ -934,6 +937,7 @@ function attachEvents() {
   });
   document.querySelectorAll('.source-card[data-source-id]').forEach(card => {
     card.addEventListener('dragstart', e => {
+      dragItem = null;
       dragSourceId = parseInt(card.dataset.sourceId, 10);
       card.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'copy';
@@ -941,17 +945,40 @@ function attachEvents() {
     });
     card.addEventListener('dragend', () => { card.classList.remove('dragging'); dragSourceId = null; });
   });
+  document.querySelectorAll('[data-action="drag-item"]').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragSourceId = null;
+      dragItem = { instanceId: parseInt(el.dataset.instanceId, 10), fromHour: String(el.dataset.hour) };
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.stopPropagation();
+    });
+    el.addEventListener('dragend', () => { el.classList.remove('dragging'); dragItem = null; });
+  });
   document.querySelectorAll('.drop-zone').forEach(zone => {
-    zone.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; zone.classList.add('dragover'); });
+    zone.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = dragItem ? 'move' : 'copy'; zone.classList.add('dragover'); });
     zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('dragover'); });
     zone.addEventListener('drop', e => {
       e.preventDefault();
       zone.classList.remove('dragover');
+      const toHour = String(zone.dataset.hour);
+      if (dragItem) {
+        // Move placed item between zones
+        const { instanceId, fromHour } = dragItem;
+        if (fromHour === toHour) return;
+        const item = (state.timeline[fromHour] || []).find(it => it.instanceId === instanceId);
+        if (!item) return;
+        state.timeline[fromHour] = state.timeline[fromHour].filter(it => it.instanceId !== instanceId);
+        if (!state.timeline[toHour]) state.timeline[toHour] = [];
+        state.timeline[toHour].push(item);
+        render();
+        return;
+      }
       const sid = dragSourceId || parseInt(e.dataTransfer.getData('text/plain'), 10);
       if (!sid || isNaN(sid)) return;
       const src = state.sources.find(s => s.id === sid);
       if (!src) return;
-      const hour = String(zone.dataset.hour);
+      const hour = toHour;
       if (!state.timeline[hour]) state.timeline[hour] = [];
       state.timeline[hour].push({ instanceId: state.nextInstanceId++, sourceId: sid });
       render();
