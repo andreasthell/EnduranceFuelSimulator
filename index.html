@@ -497,24 +497,40 @@
       flex-shrink: 0;
     }
 
+    /* ── Menu button (mobile only) ── */
+    .btn-menu { display: none; background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; padding: 4px 6px; margin-right: 2px; line-height: 1; flex-shrink: 0; }
+
+    /* ── Panel overlay ── */
+    .panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+    .panel-open .panel-overlay { display: block; }
+
     /* ── Responsive ── */
     @media (max-width: 900px) {
       .summary-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 700px) {
-      .app-layout { flex-direction: column; }
+      .btn-menu { display: block; }
+      .header-subtitle { display: none; }
       .left-panel {
-        width: 100%;
-        max-width: none;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        max-height: 480px;
+        position: fixed;
+        top: 60px; left: 0; bottom: 0;
+        width: 300px;
+        max-width: 85vw;
+        z-index: 100;
+        transform: translateX(-105%);
+        transition: transform 0.25s ease;
+        border-right: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
       }
-      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .panel-open .left-panel { transform: translateX(0); }
       .main-area { padding: 16px; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 480px) {
       .summary-grid { grid-template-columns: 1fr 1fr; }
+      .btn-icon { min-width: 28px; min-height: 28px; }
+      .source-card { padding: 12px; }
+      .pack-card { max-width: 100%; }
     }
 
     /* Pack toggle button */
@@ -601,16 +617,18 @@
 <body>
 
 <header>
+  <button class="btn-menu" id="btnMenu" aria-label="Toggle sources panel">&#9776;</button>
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
   </svg>
   <h1 id="appTitle"></h1>
-  <span id="appSubtitle"></span>
+  <span id="appSubtitle" class="header-subtitle"></span>
   <span style="flex:1"></span>
-  <span class="version-badge">v0.7.0</span>
+  <span class="version-badge">v0.8.0</span>
   <button class="btn-lang" id="btnLang">SV</button>
 </header>
 
+<div id="panelOverlay" class="panel-overlay"></div>
 <div class="app-layout">
   <aside class="left-panel" id="leftPanel"></aside>
   <main class="main-area" id="mainArea"></main>
@@ -1216,6 +1234,103 @@ window.addEventListener('resize', () => drawChart());
 loadState();
 render();
 document.getElementById('btnLang').addEventListener('click', () => { state.lang = state.lang === 'en' ? 'sv' : 'en'; render(); });
+
+// ── Panel toggle (mobile) ──
+function setPanelOpen(open) {
+  document.body.classList.toggle('panel-open', open);
+}
+document.getElementById('btnMenu').addEventListener('click', () => setPanelOpen(!document.body.classList.contains('panel-open')));
+document.getElementById('panelOverlay').addEventListener('click', () => setPanelOpen(false));
+
+// ── Touch drag ──
+(function setupTouchDrag() {
+  let ts = null; // { type, sourceId?, instanceId?, fromHour?, el }
+  let ghost = null;
+
+  function mkGhost(el, cx, cy) {
+    ghost = el.cloneNode(true);
+    const r = el.getBoundingClientRect();
+    Object.assign(ghost.style, {
+      position: 'fixed', left: (cx - r.width / 2) + 'px', top: (cy - r.height / 2) + 'px',
+      width: r.width + 'px', pointerEvents: 'none', zIndex: '9999',
+      opacity: '0.85', transform: 'scale(1.06)', transition: 'none', borderRadius: '8px',
+    });
+    document.body.appendChild(ghost);
+  }
+  function mvGhost(cx, cy) {
+    if (!ghost) return;
+    ghost.style.left = (cx - parseFloat(ghost.style.width) / 2) + 'px';
+    ghost.style.top  = (cy - ghost.getBoundingClientRect().height / 2) + 'px';
+  }
+  function rmGhost() { if (ghost) { ghost.remove(); ghost = null; } }
+  function zoneAt(x, y) {
+    for (let i = 0; i < state.raceDuration; i++) {
+      const z = document.getElementById('dropZone-' + i);
+      if (!z) continue;
+      const r = z.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return z;
+    }
+    return null;
+  }
+
+  document.addEventListener('touchstart', e => {
+    const card = e.target.closest('.source-card[data-source-id]');
+    const item = e.target.closest('[data-action="drag-item"]');
+    if (e.target.closest('[data-action="remove-item"]') || e.target.closest('[data-action="delete-source"]')) return;
+    if (!card && !item) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const el = card || item;
+    ts = card
+      ? { type: 'source', sourceId: parseInt(card.dataset.sourceId, 10), el }
+      : { type: 'item', instanceId: parseInt(item.dataset.instanceId, 10), fromHour: String(item.dataset.hour), el };
+    mkGhost(el, t.clientX, t.clientY);
+    el.classList.add('dragging');
+    setPanelOpen(false);
+  }, { passive: false });
+
+  document.addEventListener('touchmove', e => {
+    if (!ts) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    mvGhost(t.clientX, t.clientY);
+    document.querySelectorAll('.drop-zone.dragover').forEach(z => z.classList.remove('dragover'));
+    const z = zoneAt(t.clientX, t.clientY);
+    if (z) z.classList.add('dragover');
+  }, { passive: false });
+
+  document.addEventListener('touchend', e => {
+    if (!ts) return;
+    const t = e.changedTouches[0];
+    ts.el.classList.remove('dragging');
+    rmGhost();
+    document.querySelectorAll('.drop-zone.dragover').forEach(z => z.classList.remove('dragover'));
+    const zone = zoneAt(t.clientX, t.clientY);
+    if (zone) {
+      const toHour = String(zone.dataset.hour);
+      if (ts.type === 'source') {
+        const src = state.sources.find(s => s.id === ts.sourceId);
+        if (src) {
+          if (!state.timeline[toHour]) state.timeline[toHour] = [];
+          state.timeline[toHour].push({ instanceId: state.nextInstanceId++, sourceId: ts.sourceId });
+          render();
+        }
+      } else {
+        const { instanceId, fromHour } = ts;
+        if (fromHour !== toHour) {
+          const it = (state.timeline[fromHour] || []).find(x => x.instanceId === instanceId);
+          if (it) {
+            state.timeline[fromHour] = state.timeline[fromHour].filter(x => x.instanceId !== instanceId);
+            if (!state.timeline[toHour]) state.timeline[toHour] = [];
+            state.timeline[toHour].push(it);
+            render();
+          }
+        }
+      }
+    }
+    ts = null;
+  }, { passive: false });
+})();
 </script>
 </body>
 </html>
