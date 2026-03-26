@@ -454,6 +454,7 @@
       padding: 8px 0;
       pointer-events: none;
     }
+    .drop-zone { cursor: pointer; }
 
     .placed-item {
       display: flex;
@@ -607,6 +608,58 @@
       font-family: inherit;
     }
 
+    /* ── Source picker (bottom sheet) ── */
+    .source-picker { display: none; position: fixed; inset: 0; z-index: 200; flex-direction: column; justify-content: flex-end; }
+    .source-picker.open { display: flex; }
+    .picker-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+    .picker-sheet {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 18px 18px 0 0;
+      padding: 0 0 env(safe-area-inset-bottom, 12px);
+      max-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+    }
+    .picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .picker-header span { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+    .picker-close { background: none; border: none; font-size: 1rem; color: var(--text-muted); cursor: pointer; padding: 4px; }
+    .picker-list { overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .picker-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border-radius: 10px;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-family: inherit;
+      color: var(--text);
+      transition: background 0.12s;
+    }
+    .picker-item:active { background: #E3EDFA; }
+    .picker-item-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .picker-item-name { font-weight: 600; flex: 1; }
+    .picker-item-meta { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* Always show remove button on touch devices in compact mode */
+    @media (hover: none) {
+      .placed-item.compact .placed-item-icon { opacity: 0; }
+      .placed-item.compact .btn-icon { opacity: 1; }
+    }
+
     /* Scrollbar styling */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -629,6 +682,16 @@
 </header>
 
 <div id="panelOverlay" class="panel-overlay"></div>
+<div id="sourcePicker" class="source-picker" aria-hidden="true">
+  <div class="picker-backdrop" id="pickerBackdrop"></div>
+  <div class="picker-sheet">
+    <div class="picker-header">
+      <span id="pickerTitle"></span>
+      <button class="picker-close" id="pickerClose">&#x2715;</button>
+    </div>
+    <div class="picker-list" id="pickerList"></div>
+  </div>
+</div>
 <div class="app-layout">
   <aside class="left-panel" id="leftPanel"></aside>
   <main class="main-area" id="mainArea"></main>
@@ -1242,95 +1305,61 @@ function setPanelOpen(open) {
 document.getElementById('btnMenu').addEventListener('click', () => setPanelOpen(!document.body.classList.contains('panel-open')));
 document.getElementById('panelOverlay').addEventListener('click', () => setPanelOpen(false));
 
-// ── Touch drag ──
-(function setupTouchDrag() {
-  let ts = null; // { type, sourceId?, instanceId?, fromHour?, el }
-  let ghost = null;
+// ── Source picker (bottom sheet) ──
+let pickerHour = null;
 
-  function mkGhost(el, cx, cy) {
-    ghost = el.cloneNode(true);
-    const r = el.getBoundingClientRect();
-    Object.assign(ghost.style, {
-      position: 'fixed', left: (cx - r.width / 2) + 'px', top: (cy - r.height / 2) + 'px',
-      width: r.width + 'px', pointerEvents: 'none', zIndex: '9999',
-      opacity: '0.85', transform: 'scale(1.06)', transition: 'none', borderRadius: '8px',
-    });
-    document.body.appendChild(ghost);
-  }
-  function mvGhost(cx, cy) {
-    if (!ghost) return;
-    ghost.style.left = (cx - parseFloat(ghost.style.width) / 2) + 'px';
-    ghost.style.top  = (cy - ghost.getBoundingClientRect().height / 2) + 'px';
-  }
-  function rmGhost() { if (ghost) { ghost.remove(); ghost = null; } }
-  function zoneAt(x, y) {
-    for (let i = 0; i < state.raceDuration; i++) {
-      const z = document.getElementById('dropZone-' + i);
-      if (!z) continue;
-      const r = z.getBoundingClientRect();
-      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return z;
-    }
-    return null;
-  }
-
-  document.addEventListener('touchstart', e => {
-    const card = e.target.closest('.source-card[data-source-id]');
-    const item = e.target.closest('[data-action="drag-item"]');
-    if (e.target.closest('[data-action="remove-item"]') || e.target.closest('[data-action="delete-source"]')) return;
-    if (!card && !item) return;
-    e.preventDefault();
-    const t = e.touches[0];
-    const el = card || item;
-    ts = card
-      ? { type: 'source', sourceId: parseInt(card.dataset.sourceId, 10), el }
-      : { type: 'item', instanceId: parseInt(item.dataset.instanceId, 10), fromHour: String(item.dataset.hour), el };
-    mkGhost(el, t.clientX, t.clientY);
-    el.classList.add('dragging');
-    setPanelOpen(false);
-  }, { passive: false });
-
-  document.addEventListener('touchmove', e => {
-    if (!ts) return;
-    e.preventDefault();
-    const t = e.touches[0];
-    mvGhost(t.clientX, t.clientY);
-    document.querySelectorAll('.drop-zone.dragover').forEach(z => z.classList.remove('dragover'));
-    const z = zoneAt(t.clientX, t.clientY);
-    if (z) z.classList.add('dragover');
-  }, { passive: false });
-
-  document.addEventListener('touchend', e => {
-    if (!ts) return;
-    const t = e.changedTouches[0];
-    ts.el.classList.remove('dragging');
-    rmGhost();
-    document.querySelectorAll('.drop-zone.dragover').forEach(z => z.classList.remove('dragover'));
-    const zone = zoneAt(t.clientX, t.clientY);
-    if (zone) {
-      const toHour = String(zone.dataset.hour);
-      if (ts.type === 'source') {
-        const src = state.sources.find(s => s.id === ts.sourceId);
-        if (src) {
-          if (!state.timeline[toHour]) state.timeline[toHour] = [];
-          state.timeline[toHour].push({ instanceId: state.nextInstanceId++, sourceId: ts.sourceId });
+function openPicker(hour) {
+  pickerHour = String(hour);
+  const title = document.getElementById('pickerTitle');
+  const list  = document.getElementById('pickerList');
+  if (title) title.textContent = t('hour') + ' ' + (parseInt(hour) + 1);
+  if (list) {
+    list.innerHTML = state.sources.map((src, idx) => {
+      const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+      const icon  = src.icon || escapeHtml(src.name[0].toUpperCase());
+      const meta  = [src.carbs > 0 ? src.carbs + t('carbsShort') : '', src.water > 0 ? src.water + ' ml' : ''].filter(Boolean).join(' · ');
+      return `<button class="picker-item" data-source-id="${src.id}">
+        <span class="picker-item-icon" style="background:${color}22;">${icon}</span>
+        <span class="picker-item-name">${escapeHtml(src.name)}</span>
+        ${meta ? `<span class="picker-item-meta">${meta}</span>` : ''}
+      </button>`;
+    }).join('');
+    list.querySelectorAll('.picker-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sid = parseInt(btn.dataset.sourceId, 10);
+        const src = state.sources.find(s => s.id === sid);
+        if (src && pickerHour !== null) {
+          if (!state.timeline[pickerHour]) state.timeline[pickerHour] = [];
+          state.timeline[pickerHour].push({ instanceId: state.nextInstanceId++, sourceId: sid });
           render();
         }
-      } else {
-        const { instanceId, fromHour } = ts;
-        if (fromHour !== toHour) {
-          const it = (state.timeline[fromHour] || []).find(x => x.instanceId === instanceId);
-          if (it) {
-            state.timeline[fromHour] = state.timeline[fromHour].filter(x => x.instanceId !== instanceId);
-            if (!state.timeline[toHour]) state.timeline[toHour] = [];
-            state.timeline[toHour].push(it);
-            render();
-          }
-        }
-      }
-    }
-    ts = null;
-  }, { passive: false });
-})();
+        closePicker();
+      });
+    });
+  }
+  const picker = document.getElementById('sourcePicker');
+  picker.classList.add('open');
+  picker.setAttribute('aria-hidden', 'false');
+}
+
+function closePicker() {
+  const picker = document.getElementById('sourcePicker');
+  picker.classList.remove('open');
+  picker.setAttribute('aria-hidden', 'true');
+  pickerHour = null;
+}
+
+document.getElementById('pickerClose').addEventListener('click', closePicker);
+document.getElementById('pickerBackdrop').addEventListener('click', closePicker);
+
+// Open picker when tapping a drop zone (not on a placed item or hint)
+document.addEventListener('click', e => {
+  const zone = e.target.closest('.drop-zone');
+  if (!zone) return;
+  if (e.target.closest('[data-action="remove-item"]') || e.target.closest('.placed-item')) return;
+  if (state.sources.length === 0) return;
+  openPicker(zone.dataset.hour);
+});
 </script>
 </body>
 </html>
