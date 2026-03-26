@@ -1119,8 +1119,6 @@ function attachEvents() {
   if (formName)  formName.addEventListener('input',  e => { state.formData.name  = e.target.value; });
   if (formCarbs) formCarbs.addEventListener('input', e => { state.formData.carbs = e.target.value; });
   if (formWater) formWater.addEventListener('input', e => { state.formData.water = e.target.value; });
-  const btnLangEl = document.getElementById('btnLang');
-  if (btnLangEl) btnLangEl.addEventListener('click', () => { state.lang = state.lang === 'en' ? 'sv' : 'en'; render(); });
   const btnToggle = document.getElementById('btnToggleView');
   if (btnToggle) btnToggle.addEventListener('click', () => { state.compactTimeline = !state.compactTimeline; render(); });
 
@@ -1217,6 +1215,7 @@ function attachEvents() {
 window.addEventListener('resize', () => drawChart());
 loadState();
 render();
+document.getElementById('btnLang').addEventListener('click', () => { state.lang = state.lang === 'en' ? 'sv' : 'en'; render(); });
 </script>
 </body>
 </html>
