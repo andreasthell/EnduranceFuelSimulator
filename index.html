@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lopp Nutritionsplanerare</title>
+  <title>Race Nutrition Planner</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -48,7 +48,9 @@
     header svg { flex-shrink: 0; }
     header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.01em; }
     header span { font-size: 0.85rem; opacity: 0.75; margin-left: 4px; }
-    .version-badge { margin-left: auto; font-size: 0.75rem; opacity: 0.6; font-family: monospace; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; }
+    .version-badge { font-size: 0.75rem; opacity: 0.6; font-family: monospace; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; }
+    .btn-lang { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 10px; cursor: pointer; letter-spacing: 0.05em; margin-left: 8px; }
+    .btn-lang:hover { background: rgba(255,255,255,0.28); }
 
     /* ── Layout ── */
     .app-layout {
@@ -602,9 +604,11 @@
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
   </svg>
-  <h1>Lopp Nutritionsplanerare</h1>
-  <span>Uthållighetslopp &amp; energistrategi</span>
-  <span class="version-badge">v0.6.0</span>
+  <h1 id="appTitle"></h1>
+  <span id="appSubtitle"></span>
+  <span style="flex:1"></span>
+  <span class="version-badge">v0.7.0</span>
+  <button class="btn-lang" id="btnLang">SV</button>
 </header>
 
 <div class="app-layout">
@@ -619,15 +623,16 @@ const state = {
   raceDuration: 3,
   targetCarbsPerHour: 60,
   sources: [
-    { id: 1, name: 'Sportdryck', carbs: 30, water: 500, icon: '🥤', pack: true },
-    { id: 2, name: 'Energigel',  carbs: 22, water: 0,   icon: '⚡', pack: true },
-    { id: 3, name: 'Banan',      carbs: 20, water: 75,  icon: '🍌', pack: true },
+    { id: 1, name: 'Sports Drink', carbs: 30, water: 500, icon: '🥤', pack: true },
+    { id: 2, name: 'Energy Gel',   carbs: 22, water: 0,   icon: '⚡', pack: true },
+    { id: 3, name: 'Banana',       carbs: 20, water: 75,  icon: '🍌', pack: true },
   ],
   timeline: { "0": [], "1": [], "2": [] },
   nextSourceId: 4,
   nextInstanceId: 1,
   formData: { name: '', carbs: '', water: '', icon: '' },
   compactTimeline: false,
+  lang: 'en',
 };
 
 function escapeHtml(str) {
@@ -637,6 +642,105 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+const TRANSLATIONS = {
+  en: {
+    appTitle: 'Race Nutrition Planner',
+    appSubtitle: 'Endurance racing \u0026 energy strategy',
+    switchLangBtn: 'SV',
+    raceSettings: 'Race Settings',
+    raceDuration: 'Race Duration',
+    raceDurationUnit: 'hours',
+    carbTarget: 'Carb Target',
+    carbTargetUnit: 'g\u202f/\u202fhour',
+    nutritionSources: 'Nutrition Sources',
+    noSources: 'No sources added',
+    addSourceTitle: 'Add Source',
+    addSourceBtn: '+ Add Source',
+    namePlaceholder: 'Name (e.g. Sports Bar)',
+    carbsPlaceholder: 'Carbs (g) \u2014 empty\u00a0=\u00a00',
+    waterPlaceholder: 'Water (ml)',
+    carbsHint: 'Carbohydrates (g)',
+    waterHint: 'Water (ml)',
+    includeInPacking: 'Include in packing list',
+    excludeFromPacking: 'Exclude from packing list',
+    removeSource: 'Remove source',
+    totalCarbs: 'Total carbohydrates',
+    grams: 'grams',
+    avgCarbs: 'Avg. carbohydrates',
+    gPerHour: 'g\u202f/\u202fhour',
+    totalFluids: 'Total fluids',
+    mlWater: 'ml water',
+    avgFluids: 'Avg. fluids',
+    mlPerHour: 'ml\u202f/\u202fhour',
+    chartTitle: 'Carbohydrates per hour',
+    legendOnTarget: 'On target (\u2265100%)',
+    legendNear: 'Near (70\u201399%)',
+    legendBelow: 'Below (<70%)',
+    legendWater: 'Water (ml)',
+    hour: 'Hour',
+    dragHere: 'Drag here',
+    timelineTitle: 'Timeline \u2014 drag sources to hours',
+    detailView: '\u229e Detail view',
+    compactView: '\u229f Compact view',
+    removeItem: 'Remove',
+    carbsShort: 'g carbs',
+    packingList: 'Packing List',
+    pcs: 'pcs',
+    packTotal: 'Total',
+    noItemsPacked: 'No sources placed in the timeline',
+  },
+  sv: {
+    appTitle: 'Lopp Nutritionsplanerare',
+    appSubtitle: 'Uth\u00e5llighetslopp \u0026 energistrategi',
+    switchLangBtn: 'EN',
+    raceSettings: 'Loppinst\u00e4llningar',
+    raceDuration: 'Loppl\u00e4ngd',
+    raceDurationUnit: 'antal timmar',
+    carbTarget: 'Kolhydratm\u00e5l',
+    carbTargetUnit: 'g/timme',
+    nutritionSources: 'N\u00e4ringsk\u00e4llor',
+    noSources: 'Inga k\u00e4llor tillagda',
+    addSourceTitle: 'L\u00e4gg till k\u00e4lla',
+    addSourceBtn: '+ L\u00e4gg till k\u00e4lla',
+    namePlaceholder: 'Namn (t.ex. Sportbar)',
+    carbsPlaceholder: 'Kolh. (g) \u2014 tom\u00a0=\u00a00',
+    waterPlaceholder: 'Vatten (ml)',
+    carbsHint: 'Kolhydrater (g)',
+    waterHint: 'Vatten (ml)',
+    includeInPacking: 'Inkludera i packlista',
+    excludeFromPacking: 'Exkludera fr\u00e5n packlista',
+    removeSource: 'Ta bort k\u00e4lla',
+    totalCarbs: 'Totalt kolhydrater',
+    grams: 'gram',
+    avgCarbs: 'Genomsnitt kolhydrater',
+    gPerHour: 'g\u202f/\u202ftimme',
+    totalFluids: 'Total v\u00e4tska',
+    mlWater: 'ml vatten',
+    avgFluids: 'Genomsnitt v\u00e4tska',
+    mlPerHour: 'ml\u202f/\u202ftimme',
+    chartTitle: 'Kolhydrater per timme',
+    legendOnTarget: 'N\u00e5r m\u00e5l (\u2265100%)',
+    legendNear: 'N\u00e4ra (70\u201399%)',
+    legendBelow: 'Under (<70%)',
+    legendWater: 'Vatten (ml)',
+    hour: 'Timme',
+    dragHere: 'Dra hit',
+    timelineTitle: 'Tidslinje \u2014 dra n\u00e4ringsk\u00e4llor till timmarna',
+    detailView: '\u229e Detaljvy',
+    compactView: '\u229f Kompaktvy',
+    removeItem: 'Ta bort',
+    carbsShort: 'g kolh.',
+    packingList: 'Packlista',
+    pcs: 'st',
+    packTotal: 'Totalt',
+    noItemsPacked: 'Inga k\u00e4llor placerade i tidslinjen',
+  },
+};
+
+function t(key) {
+  return (TRANSLATIONS[state.lang] || TRANSLATIONS.en)[key] || key;
 }
 
 function carbsForHour(hourIndex) {
@@ -675,6 +779,7 @@ function saveState() {
       nextSourceId: state.nextSourceId,
       nextInstanceId: state.nextInstanceId,
       compactTimeline: state.compactTimeline,
+      lang: state.lang,
     }));
   } catch (e) {}
 }
@@ -691,21 +796,34 @@ function loadState() {
     if (data.nextSourceId)       state.nextSourceId       = data.nextSourceId;
     if (data.nextInstanceId)     state.nextInstanceId     = data.nextInstanceId;
     if (data.compactTimeline !== undefined) state.compactTimeline = data.compactTimeline;
+    if (data.lang) state.lang = data.lang;
   } catch (e) {}
 }
 
 function render() {
   syncTimeline();
+  renderHeader();
   renderLeftPanel();
   renderMainArea();
   attachEvents();
   saveState();
 }
 
+function renderHeader() {
+  const titleEl = document.getElementById('appTitle');
+  const subtitleEl = document.getElementById('appSubtitle');
+  const btnLang = document.getElementById('btnLang');
+  if (titleEl) titleEl.textContent = t('appTitle');
+  if (subtitleEl) subtitleEl.textContent = t('appSubtitle');
+  if (btnLang) btnLang.textContent = t('switchLangBtn');
+  document.documentElement.lang = state.lang;
+  document.title = t('appTitle');
+}
+
 function renderLeftPanel() {
   const panel = document.getElementById('leftPanel');
   const sourcesHtml = state.sources.length === 0
-    ? '<p style="font-size:0.8rem;color:var(--text-muted);text-align:center;padding:10px 0;">Inga källor tillagda</p>'
+    ? `<p style="font-size:0.8rem;color:var(--text-muted);text-align:center;padding:10px 0;">${t('noSources')}</p>`
     : state.sources.map((src, idx) => {
         const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
         return `
@@ -713,45 +831,45 @@ function renderLeftPanel() {
             <div class="source-icon-badge" style="background:${color}22; color:${color};">${src.icon || escapeHtml(src.name[0].toUpperCase())}</div>
             <div class="source-card-info">
               <div class="source-card-name">${escapeHtml(src.name)}</div>
-              <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} g kolh.` : ''}${src.water > 0 ? `${src.carbs > 0 ? ' &bull; ' : ''}${src.water} ml` : ''}</div>
+              <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} ${t('carbsShort')}` : ''}${src.water > 0 ? `${src.carbs > 0 ? ' &bull; ' : ''}${src.water} ml` : ''}</div>
             </div>
-            <button class="btn-icon btn-pack-toggle ${src.pack !== false ? 'active' : ''}" data-action="toggle-pack" data-source-id="${src.id}" title="${src.pack !== false ? 'Exkludera från packlista' : 'Inkludera i packlista'}">&#x1F4E6;</button>
-            <button class="btn-icon" data-action="delete-source" data-source-id="${src.id}" title="Ta bort källa">&#x2715;</button>
+            <button class="btn-icon btn-pack-toggle ${src.pack !== false ? 'active' : ''}" data-action="toggle-pack" data-source-id="${src.id}" title="${src.pack !== false ? t('excludeFromPacking') : t('includeInPacking')}">&#x1F4E6;</button>
+            <button class="btn-icon" data-action="delete-source" data-source-id="${src.id}" title="${t('removeSource')}">&#x2715;</button>
           </div>`;
       }).join('');
 
   panel.innerHTML = `
     <div class="panel-section">
-      <div class="panel-title">Loppinst&auml;llningar</div>
+      <div class="panel-title">${t('raceSettings')}</div>
       <div class="setting-row">
-        <div class="setting-label">Loppl&auml;ngd<small>antal timmar</small></div>
+        <div class="setting-label">${t('raceDuration')}<small>${t('raceDurationUnit')}</small></div>
         <input class="num-input" type="number" id="inputDuration" min="1" max="24" step="1" value="${state.raceDuration}" />
       </div>
       <div class="setting-row">
-        <div class="setting-label">Kolhydratm&aring;l<small>g/timme</small></div>
+        <div class="setting-label">${t('carbTarget')}<small>${t('carbTargetUnit')}</small></div>
         <input class="num-input" type="number" id="inputTarget" min="0" max="200" step="5" value="${state.targetCarbsPerHour}" />
       </div>
     </div>
     <div class="panel-section" style="flex:1;">
-      <div class="panel-title">N&auml;ringsk&auml;llor</div>
+      <div class="panel-title">${t('nutritionSources')}</div>
       <div class="source-list" id="sourceList">${sourcesHtml}</div>
       <div class="add-form">
-        <div class="panel-title" style="margin-bottom:8px;">L&auml;gg till k&auml;lla</div>
+        <div class="panel-title" style="margin-bottom:8px;">${t('addSourceTitle')}</div>
         <div class="form-row">
           <input class="text-input" type="text" id="formIcon" placeholder="🙂" value="${escapeHtml(state.formData.icon)}" maxlength="2" style="width:52px;flex-shrink:0;text-align:center;font-size:1.1rem;" />
-          <input class="text-input" type="text" id="formName" placeholder="Namn (t.ex. Sportbar)" value="${escapeHtml(state.formData.name)}" maxlength="40" />
+          <input class="text-input" type="text" id="formName" placeholder="${t('namePlaceholder')}" value="${escapeHtml(state.formData.name)}" maxlength="40" />
         </div>
         <div class="form-row">
           <div style="flex:1;">
-            <input class="text-input" type="number" id="formCarbs" placeholder="Kolh. (g) — tom = 0" min="0" max="999" step="1" value="${escapeHtml(state.formData.carbs)}" />
-            <div class="form-hint" style="margin-top:3px;">Kolhydrater (g)</div>
+            <input class="text-input" type="number" id="formCarbs" placeholder="${t('carbsPlaceholder')}" min="0" max="999" step="1" value="${escapeHtml(state.formData.carbs)}" />
+            <div class="form-hint" style="margin-top:3px;">${t('carbsHint')}</div>
           </div>
           <div style="flex:1;">
-            <input class="text-input" type="number" id="formWater" placeholder="Vatten (ml)" min="0" max="9999" step="10" value="${escapeHtml(state.formData.water)}" />
-            <div class="form-hint" style="margin-top:3px;">Vatten (ml)</div>
+            <input class="text-input" type="number" id="formWater" placeholder="${t('waterPlaceholder')}" min="0" max="9999" step="10" value="${escapeHtml(state.formData.water)}" />
+            <div class="form-hint" style="margin-top:3px;">${t('waterHint')}</div>
           </div>
         </div>
-        <button class="btn-primary" id="btnAddSource">+ L&auml;gg till k&auml;lla</button>
+        <button class="btn-primary" id="btnAddSource">${t('addSourceBtn')}</button>
       </div>
     </div>`;
 }
@@ -774,21 +892,21 @@ function renderMainArea() {
 
   const summaryHtml = `
     <div class="summary-grid">
-      <div class="stat-card"><div class="stat-label">Totalt kolhydrater</div><div class="stat-value">${totalCarbs}</div><div class="stat-unit">gram</div></div>
-      <div class="stat-card"><div class="stat-label">Genomsnitt kolhydrater</div><div class="stat-value">${avgCarbsPerHour}</div><div class="stat-unit">g / timme</div></div>
-      <div class="stat-card"><div class="stat-label">Total v&auml;tska</div><div class="stat-value">${totalWater}</div><div class="stat-unit">ml vatten</div></div>
-      <div class="stat-card"><div class="stat-label">Genomsnitt v&auml;tska</div><div class="stat-value">${avgWaterPerHour}</div><div class="stat-unit">ml / timme</div></div>
+      <div class="stat-card"><div class="stat-label">${t('totalCarbs')}</div><div class="stat-value">${totalCarbs}</div><div class="stat-unit">${t('grams')}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('avgCarbs')}</div><div class="stat-value">${avgCarbsPerHour}</div><div class="stat-unit">${t('gPerHour')}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('totalFluids')}</div><div class="stat-value">${totalWater}</div><div class="stat-unit">${t('mlWater')}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('avgFluids')}</div><div class="stat-value">${avgWaterPerHour}</div><div class="stat-unit">${t('mlPerHour')}</div></div>
     </div>`;
 
   const chartHtml = `
     <div class="chart-card">
       <div class="chart-header">
-        <div class="chart-title">Kolhydrater per timme</div>
+        <div class="chart-title">${t('chartTitle')}</div>
         <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--green-bar)"></div>N&aring;r m&aring;l (&ge;100%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--orange-bar)"></div>N&auml;ra (70&ndash;99%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--red-bar)"></div>Under (&lt;70%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#00ACC1"></div>Vatten (ml)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green-bar)"></div>${t('legendOnTarget')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--orange-bar)"></div>${t('legendNear')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red-bar)"></div>${t('legendBelow')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00ACC1"></div>${t('legendWater')}</div>
         </div>
       </div>
       <canvas id="barChart"></canvas>
@@ -806,15 +924,15 @@ function renderMainArea() {
       const color = COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length];
       const iconLabel = src.icon || escapeHtml(src.name[0].toUpperCase());
       const compactClass = state.compactTimeline ? ' compact' : '';
-      return `<div class="placed-item${compactClass}" draggable="true" data-action="drag-item" data-hour="${i}" data-instance-id="${item.instanceId}" style="border-left-color:${color};" title="${escapeHtml(src.name)} — ${src.carbs > 0 ? src.carbs + 'g kolh.' : ''}${src.water > 0 ? ' ' + src.water + 'ml' : ''}"><span class="placed-item-icon" style="background:${color}22;">${iconLabel}</span><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort" draggable="false">&#x2715;</button></div>`;
+      return `<div class="placed-item${compactClass}" draggable="true" data-action="drag-item" data-hour="${i}" data-instance-id="${item.instanceId}" style="border-left-color:${color};" title="${escapeHtml(src.name)} — ${src.carbs > 0 ? src.carbs + t('carbsShort') : ''}${src.water > 0 ? ' ' + src.water + 'ml' : ''}"><span class="placed-item-icon" style="background:${color}22;">${iconLabel}</span><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="${t('removeItem')}" draggable="false">&#x2715;</button></div>`;
     }).join('');
     hourCols.push(`
       <div class="hour-col">
-        <div class="hour-label">Timme ${i + 1}</div>
+        <div class="hour-label">${t('hour')} ${i + 1}</div>
         <div class="hour-carbs-badge ${badgeClass}">${hc} g</div>
         <div class="drop-zone${state.compactTimeline ? ' compact-mode' : ''}" data-hour="${i}" id="dropZone-${i}">
           ${placedItems}
-          ${items.length === 0 ? '<div class="drop-zone-hint">Dra hit</div>' : ''}
+          ${items.length === 0 ? `<div class="drop-zone-hint">${t('dragHere')}</div>` : ''}
         </div>
       </div>`);
   }
@@ -834,21 +952,21 @@ function renderMainArea() {
     totalPackCount += count;
     const totalCarbs = src.carbs * count;
     const totalWater = src.water * count;
-    const sub = [totalCarbs > 0 ? `${totalCarbs}g kolh.` : '', totalWater > 0 ? `${totalWater}ml` : ''].filter(Boolean).join(' · ');
+    const sub = [totalCarbs > 0 ? `${totalCarbs}${t('carbsShort')}` : '', totalWater > 0 ? `${totalWater}ml` : ''].filter(Boolean).join(' · ');
     const icon = src.icon || escapeHtml(src.name[0].toUpperCase());
-    return `<div class="receipt-row"><span class="receipt-name">${icon} ${escapeHtml(src.name)}</span><span class="receipt-qty">${count} st</span></div>${sub ? `<div class="receipt-sub">${sub}</div>` : ''}`;
+    return `<div class="receipt-row"><span class="receipt-name">${icon} ${escapeHtml(src.name)}</span><span class="receipt-qty">${count} ${t('pcs')}</span></div>${sub ? `<div class="receipt-sub">${sub}</div>` : ''}`;
   });
   const packHtml = `<div class="pack-card"><div class="receipt">
-    <div class="receipt-header">Packlista</div>
+    <div class="receipt-header">${t('packingList')}</div>
     <hr class="receipt-divider">
-    ${packedSources.length ? receiptRows.join('') + `<hr class="receipt-divider"><div class="receipt-total-row"><span>Totalt</span><span>${totalPackCount} st</span></div>` : '<div class="pack-empty">Inga k\u00e4llor placerade i tidslinjen</div>'}
+    ${packedSources.length ? receiptRows.join('') + `<hr class="receipt-divider"><div class="receipt-total-row"><span>${t('packTotal')}</span><span>${totalPackCount} ${t('pcs')}</span></div>` : `<div class="pack-empty">${t('noItemsPacked')}</div>`}
   </div></div>`;
 
   main.innerHTML = summaryHtml + chartHtml + `
     <div class="timeline-card">
       <div class="timeline-header">
-        <span>Tidslinje &mdash; dra n&auml;ringsk&auml;llor till timmarna</span>
-        <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? '⊞ Detaljvy' : '⊟ Kompaktvy'}</button>
+        <span>${t('timelineTitle')}</span>
+        <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? t('detailView') : t('compactView')}</button>
       </div>
       <div class="timeline-scroll"><div class="timeline-grid">${hourCols.join('')}</div></div>
     </div>` + packHtml;
@@ -1001,6 +1119,8 @@ function attachEvents() {
   if (formName)  formName.addEventListener('input',  e => { state.formData.name  = e.target.value; });
   if (formCarbs) formCarbs.addEventListener('input', e => { state.formData.carbs = e.target.value; });
   if (formWater) formWater.addEventListener('input', e => { state.formData.water = e.target.value; });
+  const btnLangEl = document.getElementById('btnLang');
+  if (btnLangEl) btnLangEl.addEventListener('click', () => { state.lang = state.lang === 'en' ? 'sv' : 'en'; render(); });
   const btnToggle = document.getElementById('btnToggleView');
   if (btnToggle) btnToggle.addEventListener('click', () => { state.compactTimeline = !state.compactTimeline; render(); });
 
