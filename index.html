@@ -528,7 +528,7 @@
   </svg>
   <h1>Lopp Nutritionsplanerare</h1>
   <span>Uthållighetslopp &amp; energistrategi</span>
-  <span class="version-badge">v0.3.0</span>
+  <span class="version-badge">v0.4.0</span>
 </header>
 
 <div class="app-layout">
@@ -568,6 +568,14 @@ function carbsForHour(hourIndex) {
   return items.reduce((sum, item) => {
     const src = state.sources.find(s => s.id === item.sourceId);
     return sum + (src ? src.carbs : 0);
+  }, 0);
+}
+
+function waterForHour(hourIndex) {
+  const items = state.timeline[String(hourIndex)] || [];
+  return items.reduce((sum, item) => {
+    const src = state.sources.find(s => s.id === item.sourceId);
+    return sum + (src ? src.water : 0);
   }, 0);
 }
 
@@ -700,6 +708,7 @@ function renderMainArea() {
           <div class="legend-item"><div class="legend-dot" style="background:var(--green-bar)"></div>N&aring;r m&aring;l (&ge;100%)</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--orange-bar)"></div>N&auml;ra (70&ndash;99%)</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--red-bar)"></div>Under (&lt;70%)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00ACC1"></div>Vatten (ml)</div>
         </div>
       </div>
       <canvas id="barChart"></canvas>
@@ -754,60 +763,100 @@ function drawChart() {
   canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
+
   const n = state.raceDuration;
   const target = state.targetCarbsPerHour;
-  const data = [];
-  for (let i = 0; i < n; i++) data.push(carbsForHour(i));
-  const maxVal = Math.max(target * 1.3, ...data, 10);
-  const PAD_L = 44, PAD_R = 16, PAD_T = 14, PAD_B = 32;
+  const carbsData = [], waterData = [];
+  for (let i = 0; i < n; i++) {
+    carbsData.push(carbsForHour(i));
+    waterData.push(waterForHour(i));
+  }
+  const maxCarbs = Math.max(target * 1.3, ...carbsData, 10);
+  const maxWater = Math.max(...waterData, 100);
+
+  const PAD_L = 44, PAD_R = 44, PAD_T = 14, PAD_B = 32;
   const chartW = W - PAD_L - PAD_R;
   const chartH = H - PAD_T - PAD_B;
+
   ctx.clearRect(0, 0, W, H);
-  ctx.strokeStyle = '#E8EDF5';
+
+  // Grid lines + dual axis labels
   ctx.lineWidth = 1;
   for (let g = 0; g <= 4; g++) {
     const y = PAD_T + chartH - (g / 4) * chartH;
+    ctx.strokeStyle = '#E8EDF5';
     ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + chartW, y); ctx.stroke();
-    ctx.fillStyle = '#9FAACC';
     ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = '#9FAACC';
     ctx.textAlign = 'right';
-    ctx.fillText(Math.round((g / 4) * maxVal), PAD_L - 5, y + 4);
+    ctx.fillText(Math.round((g / 4) * maxCarbs) + 'g', PAD_L - 4, y + 4);
+    ctx.fillStyle = '#00ACC1';
+    ctx.textAlign = 'left';
+    ctx.fillText(Math.round((g / 4) * maxWater) + 'ml', PAD_L + chartW + 4, y + 4);
   }
-  const barPad = 0.25;
+
+  // Grouped bars
+  const slotPad = 0.18;
   const slotW = n > 0 ? chartW / n : 0;
-  const barW = slotW * (1 - barPad);
+  const availW = slotW * (1 - slotPad);
+  const gap = 3;
+  const barW = (availW - gap) / 2;
+
   for (let i = 0; i < n; i++) {
-    const val = data[i];
-    const pct = target > 0 ? val / target : 1;
-    const color = pct >= 1 ? '#43A047' : pct >= 0.7 ? '#FB8C00' : '#E53935';
-    const barH = chartH * (val / maxVal);
-    const x = PAD_L + i * slotW + slotW * barPad / 2;
-    const y = PAD_T + chartH - barH;
-    const r = Math.min(4, barW / 2, barH);
-    ctx.fillStyle = color;
-    if (barH > 0) {
+    const slotX = PAD_L + i * slotW + slotW * slotPad / 2;
+
+    // Carbs bar
+    const cv = carbsData[i];
+    const pct = target > 0 ? cv / target : 1;
+    const carbsColor = pct >= 1 ? '#43A047' : pct >= 0.7 ? '#FB8C00' : '#E53935';
+    const cbH = chartH * (cv / maxCarbs);
+    const cx = slotX, cy = PAD_T + chartH - cbH;
+    if (cbH > 0) {
+      const r = Math.min(4, barW / 2, cbH);
+      ctx.fillStyle = carbsColor;
       ctx.beginPath();
-      ctx.moveTo(x, y + r);
-      ctx.arcTo(x, y, x + r, y, r);
-      ctx.arcTo(x + barW, y, x + barW, y + r, r);
-      ctx.lineTo(x + barW, y + barH);
-      ctx.lineTo(x, y + barH);
-      ctx.closePath();
-      ctx.fill();
+      ctx.moveTo(cx, cy + r); ctx.arcTo(cx, cy, cx + r, cy, r);
+      ctx.arcTo(cx + barW, cy, cx + barW, cy + r, r);
+      ctx.lineTo(cx + barW, cy + cbH); ctx.lineTo(cx, cy + cbH);
+      ctx.closePath(); ctx.fill();
     }
-    if (val > 0) {
+    if (cv > 0) {
       ctx.fillStyle = '#1A2340';
-      ctx.font = 'bold 11px -apple-system, sans-serif';
+      ctx.font = 'bold 10px -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(val + 'g', x + barW / 2, Math.max(y - 4, PAD_T + 10));
+      ctx.fillText(cv + 'g', cx + barW / 2, Math.max(cy - 3, PAD_T + 10));
     }
+
+    // Water bar
+    const wv = waterData[i];
+    const wbH = chartH * (wv / maxWater);
+    const wx = slotX + barW + gap, wy = PAD_T + chartH - wbH;
+    if (wbH > 0) {
+      const r = Math.min(4, barW / 2, wbH);
+      ctx.fillStyle = '#00ACC1';
+      ctx.beginPath();
+      ctx.moveTo(wx, wy + r); ctx.arcTo(wx, wy, wx + r, wy, r);
+      ctx.arcTo(wx + barW, wy, wx + barW, wy + r, r);
+      ctx.lineTo(wx + barW, wy + wbH); ctx.lineTo(wx, wy + wbH);
+      ctx.closePath(); ctx.fill();
+    }
+    if (wv > 0) {
+      ctx.fillStyle = '#007b8a';
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(wv + 'ml', wx + barW / 2, Math.max(wy - 3, PAD_T + 10));
+    }
+
+    // X label
     ctx.fillStyle = '#6B7A99';
     ctx.font = '11px -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('T' + (i + 1), x + barW / 2, H - PAD_B + 16);
+    ctx.fillText('T' + (i + 1), slotX + availW / 2, H - PAD_B + 16);
   }
+
+  // Carbs target line
   if (target > 0) {
-    const ty = PAD_T + chartH - chartH * (target / maxVal);
+    const ty = PAD_T + chartH - chartH * (target / maxCarbs);
     ctx.save();
     ctx.strokeStyle = '#1565C0';
     ctx.lineWidth = 1.5;
