@@ -635,7 +635,7 @@ function renderLeftPanel() {
             <div class="source-icon-badge" style="background:${color}22; color:${color};">${src.icon || escapeHtml(src.name[0].toUpperCase())}</div>
             <div class="source-card-info">
               <div class="source-card-name">${escapeHtml(src.name)}</div>
-              <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} g kolh.` : '<span style="color:#00ACC1">&#x1F4A7; Vatten</span>'}${src.water > 0 ? ` &bull; ${src.water} ml` : ''}</div>
+              <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} g kolh.` : ''}${src.water > 0 ? `${src.carbs > 0 ? ' &bull; ' : ''}${src.water} ml` : ''}</div>
             </div>
             <button class="btn-icon" data-action="delete-source" data-source-id="${src.id}" title="Ta bort källa">&#x2715;</button>
           </div>`;
@@ -690,14 +690,15 @@ function renderMainArea() {
       if (src) totalWater += src.water;
     });
   }
-  const avgPerHour = state.raceDuration > 0 ? (totalCarbs / state.raceDuration).toFixed(1) : 0;
+  const avgCarbsPerHour = state.raceDuration > 0 ? (totalCarbs / state.raceDuration).toFixed(1) : 0;
+  const avgWaterPerHour = state.raceDuration > 0 ? Math.round(totalWater / state.raceDuration) : 0;
 
   const summaryHtml = `
     <div class="summary-grid">
       <div class="stat-card"><div class="stat-label">Totalt kolhydrater</div><div class="stat-value">${totalCarbs}</div><div class="stat-unit">gram</div></div>
-      <div class="stat-card"><div class="stat-label">Genomsnitt</div><div class="stat-value">${avgPerHour}</div><div class="stat-unit">g / timme</div></div>
+      <div class="stat-card"><div class="stat-label">Genomsnitt kolhydrater</div><div class="stat-value">${avgCarbsPerHour}</div><div class="stat-unit">g / timme</div></div>
       <div class="stat-card"><div class="stat-label">Total v&auml;tska</div><div class="stat-value">${totalWater}</div><div class="stat-unit">ml vatten</div></div>
-      <div class="stat-card ${hoursMeet === state.raceDuration && state.raceDuration > 0 ? 'highlight' : ''}"><div class="stat-label">Timmar som n&aring;r m&aring;l</div><div class="stat-value">${hoursMeet} / ${state.raceDuration}</div><div class="stat-unit">timmar</div></div>
+      <div class="stat-card"><div class="stat-label">Genomsnitt v&auml;tska</div><div class="stat-value">${avgWaterPerHour}</div><div class="stat-unit">ml / timme</div></div>
     </div>`;
 
   const chartHtml = `
@@ -755,11 +756,12 @@ function drawChart() {
   const canvas = document.getElementById('barChart');
   if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth || 600;
+  canvas.style.display = 'block';
+  canvas.style.width = '100%';
+  const W = canvas.offsetWidth || 600;
   const H = 200;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
   canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
