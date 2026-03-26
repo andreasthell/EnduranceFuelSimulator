@@ -145,6 +145,16 @@
     .source-card:hover { box-shadow: var(--shadow-md); }
     .source-card.dragging { opacity: 0.45; transform: scale(0.97); }
 
+    .source-icon-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
     .source-card-info { flex: 1; min-width: 0; }
     .source-card-name {
       font-size: 0.875rem;
@@ -395,6 +405,16 @@
       border-left: 3px solid transparent;
       font-size: 0.78rem;
     }
+    .placed-item-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
     .placed-item-name {
       flex: 1;
       min-width: 0;
@@ -450,7 +470,7 @@
   </svg>
   <h1>Lopp Nutritionsplanerare</h1>
   <span>Uthållighetslopp &amp; energistrategi</span>
-  <span class="version-badge">v0.2.0</span>
+  <span class="version-badge">v0.3.0</span>
 </header>
 
 <div class="app-layout">
@@ -465,14 +485,14 @@ const state = {
   raceDuration: 3,
   targetCarbsPerHour: 60,
   sources: [
-    { id: 1, name: 'Sportdryck', carbs: 30, water: 500 },
-    { id: 2, name: 'Energigel',  carbs: 22, water: 0   },
-    { id: 3, name: 'Banan',      carbs: 20, water: 75  },
+    { id: 1, name: 'Sportdryck', carbs: 30, water: 500, icon: '🥤' },
+    { id: 2, name: 'Energigel',  carbs: 22, water: 0,   icon: '⚡' },
+    { id: 3, name: 'Banan',      carbs: 20, water: 75,  icon: '🍌' },
   ],
   timeline: { "0": [], "1": [], "2": [] },
   nextSourceId: 4,
   nextInstanceId: 1,
-  formData: { name: '', carbs: '', water: '' },
+  formData: { name: '', carbs: '', water: '', icon: '' },
 };
 
 function escapeHtml(str) {
@@ -545,6 +565,7 @@ function renderLeftPanel() {
         const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
         return `
           <div class="source-card" draggable="true" data-source-id="${src.id}" style="border-left-color: ${color};" id="srcCard-${src.id}">
+            <div class="source-icon-badge" style="background:${color}22; color:${color};">${src.icon || escapeHtml(src.name[0].toUpperCase())}</div>
             <div class="source-card-info">
               <div class="source-card-name">${escapeHtml(src.name)}</div>
               <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} g kolh.` : '<span style="color:#00ACC1">&#x1F4A7; Vatten</span>'}${src.water > 0 ? ` &bull; ${src.water} ml` : ''}</div>
@@ -570,7 +591,10 @@ function renderLeftPanel() {
       <div class="source-list" id="sourceList">${sourcesHtml}</div>
       <div class="add-form">
         <div class="panel-title" style="margin-bottom:8px;">L&auml;gg till k&auml;lla</div>
-        <input class="text-input" type="text" id="formName" placeholder="Namn (t.ex. Sportbar)" value="${escapeHtml(state.formData.name)}" maxlength="40" />
+        <div class="form-row">
+          <input class="text-input" type="text" id="formIcon" placeholder="🙂" value="${escapeHtml(state.formData.icon)}" maxlength="2" style="width:52px;flex-shrink:0;text-align:center;font-size:1.1rem;" />
+          <input class="text-input" type="text" id="formName" placeholder="Namn (t.ex. Sportbar)" value="${escapeHtml(state.formData.name)}" maxlength="40" />
+        </div>
         <div class="form-row">
           <div style="flex:1;">
             <input class="text-input" type="number" id="formCarbs" placeholder="Kolh. (g) — tom = 0" min="0" max="999" step="1" value="${escapeHtml(state.formData.carbs)}" />
@@ -632,7 +656,8 @@ function renderMainArea() {
       const src = state.sources.find(s => s.id === item.sourceId);
       if (!src) return '';
       const color = COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length];
-      return `<div class="placed-item" style="border-left-color:${color};"><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort">&#x2715;</button></div>`;
+      const iconLabel = src.icon || escapeHtml(src.name[0].toUpperCase());
+      return `<div class="placed-item" style="border-left-color:${color};" title="${escapeHtml(src.name)} — ${src.carbs > 0 ? src.carbs + 'g kolh.' : ''}${src.water > 0 ? ' ' + src.water + 'ml' : ''}"><span class="placed-item-icon" style="background:${color}22;">${iconLabel}</span><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort">&#x2715;</button></div>`;
     }).join('');
     hourCols.push(`
       <div class="hour-col">
@@ -749,6 +774,8 @@ function attachEvents() {
   const formName  = document.getElementById('formName');
   const formCarbs = document.getElementById('formCarbs');
   const formWater = document.getElementById('formWater');
+  const formIcon  = document.getElementById('formIcon');
+  if (formIcon)  formIcon.addEventListener('input',  e => { state.formData.icon  = e.target.value; });
   if (formName)  formName.addEventListener('input',  e => { state.formData.name  = e.target.value; });
   if (formCarbs) formCarbs.addEventListener('input', e => { state.formData.carbs = e.target.value; });
   if (formWater) formWater.addEventListener('input', e => { state.formData.water = e.target.value; });
@@ -761,8 +788,8 @@ function attachEvents() {
       if (formName) { formName.focus(); formName.style.borderColor = '#E53935'; setTimeout(() => formName.style.borderColor = '', 1200); }
       return;
     }
-    state.sources.push({ id: state.nextSourceId++, name, carbs, water: isNaN(water) ? 0 : Math.max(0, water) });
-    state.formData = { name: '', carbs: '', water: '' };
+    state.sources.push({ id: state.nextSourceId++, name, carbs, water: isNaN(water) ? 0 : Math.max(0, water), icon: state.formData.icon.trim() });
+    state.formData = { name: '', carbs: '', water: '', icon: '' };
     render();
   });
   document.querySelectorAll('[data-action="delete-source"]').forEach(btn => {
