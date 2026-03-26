@@ -822,12 +822,6 @@ function drawChart() {
       ctx.lineTo(cx + barW, cy + cbH); ctx.lineTo(cx, cy + cbH);
       ctx.closePath(); ctx.fill();
     }
-    if (cv > 0) {
-      ctx.fillStyle = '#1A2340';
-      ctx.font = 'bold 10px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(cv + 'g', cx + barW / 2, Math.max(cy - 3, PAD_T + 10));
-    }
 
     // Water bar
     const wv = waterData[i];
@@ -842,11 +836,21 @@ function drawChart() {
       ctx.lineTo(wx + barW, wy + wbH); ctx.lineTo(wx, wy + wbH);
       ctx.closePath(); ctx.fill();
     }
+
+    // Labels — aligned to the top of the tallest bar in this slot
+    const labelY = Math.max(PAD_T + 10, Math.min(
+      cv > 0 ? cy - 3 : Infinity,
+      wv > 0 ? wy - 3 : Infinity
+    ));
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    if (cv > 0) {
+      ctx.fillStyle = '#1A2340';
+      ctx.fillText(cv + 'g', cx + barW / 2, labelY);
+    }
     if (wv > 0) {
       ctx.fillStyle = '#007b8a';
-      ctx.font = 'bold 10px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(wv + 'ml', wx + barW / 2, Math.max(wy - 3, PAD_T + 10));
+      ctx.fillText(wv + 'ml', wx + barW / 2, labelY);
     }
 
     // X label
