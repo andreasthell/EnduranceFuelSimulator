@@ -46,7 +46,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.20);
     }
     header svg { flex-shrink: 0; }
-    header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.01em; }
+    header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.01em; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     header span { font-size: 0.85rem; opacity: 0.75; margin-left: 4px; }
     .version-badge { font-size: 0.75rem; opacity: 0.6; font-family: monospace; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; }
     .btn-lang { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 10px; cursor: pointer; letter-spacing: 0.05em; margin-left: 8px; }
@@ -654,10 +654,17 @@
     .picker-item-name { font-weight: 600; flex: 1; }
     .picker-item-meta { font-size: 0.75rem; color: var(--text-muted); }
 
-    /* Always show remove button on touch devices in compact mode */
+    /* Touch devices: compact mode shows icon + small corner remove badge */
     @media (hover: none) {
-      .placed-item.compact .placed-item-icon { opacity: 0; }
-      .placed-item.compact .btn-icon { opacity: 1; }
+      .placed-item.compact .placed-item-icon { opacity: 1; }
+      .placed-item.compact .btn-icon {
+        width: 18px; height: 18px; font-size: 0.6rem;
+        top: -3px; right: -3px; left: auto;
+        opacity: 1;
+        background: #E53935; color: #fff;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+      }
     }
 
     /* Scrollbar styling */
@@ -761,7 +768,7 @@ const TRANSLATIONS = {
     legendBelow: 'Below (<70%)',
     legendWater: 'Water (ml)',
     hour: 'Hour',
-    dragHere: 'Drag here',
+    dragHere: 'Tap or drag to add',
     timelineTitle: 'Timeline \u2014 drag sources to hours',
     detailView: '\u229e Detail view',
     compactView: '\u229f Compact view',
@@ -807,7 +814,7 @@ const TRANSLATIONS = {
     legendBelow: 'Under (<70%)',
     legendWater: 'Vatten (ml)',
     hour: 'Timme',
-    dragHere: 'Dra hit',
+    dragHere: 'Tryck eller dra för att lägga till',
     timelineTitle: 'Tidslinje \u2014 dra n\u00e4ringsk\u00e4llor till timmarna',
     detailView: '\u229e Detaljvy',
     compactView: '\u229f Kompaktvy',
