@@ -347,36 +347,37 @@
     .btn-toggle-view:hover { border-color: var(--primary-light); color: var(--primary); }
     .btn-toggle-view.active { background: var(--primary); border-color: var(--primary); color: #fff; }
     .placed-item.compact {
-      padding: 3px;
+      padding: 0;
       gap: 0;
       border-left: none;
       background: none;
-      position: relative;
-      justify-content: center;
+      display: grid;
+      grid-template: 1fr / 1fr;
+      width: 80px;
+      height: 80px;
     }
     .placed-item.compact .placed-item-name,
     .placed-item.compact .placed-item-meta { display: none; }
     .placed-item.compact .placed-item-icon {
-      width: 40px;
-      height: 40px;
-      font-size: 1.4rem;
-      border-radius: 8px;
+      grid-area: 1/1;
+      width: 80px;
+      height: 80px;
+      font-size: 2.2rem;
+      border-radius: 10px;
     }
     .placed-item.compact .btn-icon {
-      display: none;
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      width: 16px;
-      height: 16px;
-      font-size: 0.6rem;
-      background: var(--red);
+      grid-area: 1/1;
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      background: rgba(198,40,40,0.82);
       color: #fff;
-      border-radius: 50%;
+      font-size: 1.4rem;
+      opacity: 0;
+      transition: opacity 0.15s;
       z-index: 1;
     }
-    .placed-item.compact:hover .btn-icon { display: flex; }
-    .placed-item.compact:hover .placed-item-icon { opacity: 0.85; }
+    .placed-item.compact:hover .btn-icon { opacity: 1; }
 
     .timeline-scroll {
       overflow-x: auto;
