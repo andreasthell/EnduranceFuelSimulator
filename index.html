@@ -450,7 +450,7 @@
   </svg>
   <h1>Lopp Nutritionsplanerare</h1>
   <span>Uthållighetslopp &amp; energistrategi</span>
-  <span class="version-badge">v0.1.0</span>
+  <span class="version-badge">v0.2.0</span>
 </header>
 
 <div class="app-layout">
@@ -547,7 +547,7 @@ function renderLeftPanel() {
           <div class="source-card" draggable="true" data-source-id="${src.id}" style="border-left-color: ${color};" id="srcCard-${src.id}">
             <div class="source-card-info">
               <div class="source-card-name">${escapeHtml(src.name)}</div>
-              <div class="source-card-meta">${src.carbs} g kolh. &bull; ${src.water} ml vatten</div>
+              <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} g kolh.` : '<span style="color:#00ACC1">&#x1F4A7; Vatten</span>'}${src.water > 0 ? ` &bull; ${src.water} ml` : ''}</div>
             </div>
             <button class="btn-icon" data-action="delete-source" data-source-id="${src.id}" title="Ta bort källa">&#x2715;</button>
           </div>`;
@@ -573,7 +573,7 @@ function renderLeftPanel() {
         <input class="text-input" type="text" id="formName" placeholder="Namn (t.ex. Sportbar)" value="${escapeHtml(state.formData.name)}" maxlength="40" />
         <div class="form-row">
           <div style="flex:1;">
-            <input class="text-input" type="number" id="formCarbs" placeholder="Kolh. (g)" min="0" max="999" step="1" value="${escapeHtml(state.formData.carbs)}" />
+            <input class="text-input" type="number" id="formCarbs" placeholder="Kolh. (g) — tom = 0" min="0" max="999" step="1" value="${escapeHtml(state.formData.carbs)}" />
             <div class="form-hint" style="margin-top:3px;">Kolhydrater (g)</div>
           </div>
           <div style="flex:1;">
@@ -632,7 +632,7 @@ function renderMainArea() {
       const src = state.sources.find(s => s.id === item.sourceId);
       if (!src) return '';
       const color = COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length];
-      return `<div class="placed-item" style="border-left-color:${color};"><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs}g</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort">&#x2715;</button></div>`;
+      return `<div class="placed-item" style="border-left-color:${color};"><div class="placed-item-name">${escapeHtml(src.name)}</div><div class="placed-item-meta">${src.carbs > 0 ? src.carbs + 'g' : '💧'}</div><button class="btn-icon" data-action="remove-item" data-hour="${i}" data-instance-id="${item.instanceId}" title="Ta bort">&#x2715;</button></div>`;
     }).join('');
     hourCols.push(`
       <div class="hour-col">
@@ -755,7 +755,7 @@ function attachEvents() {
   const btnAdd = document.getElementById('btnAddSource');
   if (btnAdd) btnAdd.addEventListener('click', () => {
     const name  = state.formData.name.trim();
-    const carbs = parseInt(state.formData.carbs, 10);
+    const carbs = state.formData.carbs === '' ? 0 : parseInt(state.formData.carbs, 10);
     const water = parseInt(state.formData.water, 10);
     if (!name || isNaN(carbs) || carbs < 0) {
       if (formName) { formName.focus(); formName.style.borderColor = '#E53935'; setTimeout(() => formName.style.borderColor = '', 1200); }
