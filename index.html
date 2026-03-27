@@ -786,10 +786,18 @@
     .plan-hour-icons { flex: 1; }
     .plan-hour-stats { color: var(--text-muted); white-space: nowrap; font-size: 0.75rem; }
 
+    .app-footer {
+      text-align: center; font-size: 0.72rem; color: var(--text-muted);
+      padding: 14px 16px; opacity: 0.7; margin-top: auto;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .footer-mail { color: var(--text-muted); display: flex; align-items: center; }
+    .footer-mail:hover { color: var(--primary); }
+
     @media print {
       header, .left-panel, .panel-overlay, .source-picker,
       .summary-grid, .chart-card, .timeline-card, .btn-print,
-      .print-section-actions { display: none !important; }
+      .print-section-actions, .app-footer { display: none !important; }
       :root, :root.dark {
         --bg: #fff; --card-bg: #fff; --border: #ccc;
         --text: #000; --text-muted: #555;
@@ -1284,6 +1292,12 @@ function renderLeftPanel() {
         </div>
         <button class="btn-primary" id="btnAddSource">${t('addSourceBtn')}</button>
       </div>
+    </div>
+    <div class="app-footer">
+      Vibe-built with Claude Code by Andreas Sandelin Thell
+      <a class="footer-mail" href="mailto:30_pitfall_onsets@icloud.com" aria-label="Send email">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+      </a>
     </div>`;
 }
 
