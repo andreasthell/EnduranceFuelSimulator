@@ -826,7 +826,7 @@
   <h1 id="appTitle"></h1>
   <span id="appSubtitle" class="header-subtitle"></span>
   <span style="flex:1"></span>
-  <span class="version-badge">v1.0.0</span>
+  <span class="version-badge">v1.1.0</span>
   <button class="btn-theme" id="btnTheme" aria-label="Toggle dark mode">🌙</button>
   <button class="btn-lang" id="btnLang">SV</button>
 </header>
@@ -853,6 +853,7 @@ const COLOR_PALETTE = ['#1E88E5','#FB8C00','#43A047','#E53935','#8E24AA','#00ACC
 const state = {
   raceDuration: 3,
   targetCarbsPerHour: 60,
+  targetWaterPerHour: 500,
   sources: [
     { id: 1, name: 'Sports Drink', carbs: 30, water: 500, icon: '🥤', pack: true },
     { id: 2, name: 'Energy Gel',   carbs: 22, water: 0,   icon: '⚡', pack: true },
@@ -887,6 +888,8 @@ const TRANSLATIONS = {
     raceDurationUnit: 'hours',
     carbTarget: 'Carb Target',
     carbTargetUnit: 'g\u202f/\u202fhour',
+    waterTarget: 'Water Target',
+    waterTargetUnit: 'ml\u202f/\u202fhour',
     nutritionSources: 'Nutrition Sources',
     noSources: 'No sources added',
     addSourceTitle: 'Add Source',
@@ -939,6 +942,8 @@ const TRANSLATIONS = {
     raceDurationUnit: 'antal timmar',
     carbTarget: 'Kolhydratm\u00e5l',
     carbTargetUnit: 'g/timme',
+    waterTarget: 'Vattenmål',
+    waterTargetUnit: 'ml/timme',
     nutritionSources: 'N\u00e4ringsk\u00e4llor',
     noSources: 'Inga k\u00e4llor tillagda',
     addSourceTitle: 'L\u00e4gg till k\u00e4lla',
@@ -1019,6 +1024,7 @@ function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       raceDuration: state.raceDuration,
       targetCarbsPerHour: state.targetCarbsPerHour,
+      targetWaterPerHour: state.targetWaterPerHour,
       sources: state.sources,
       timeline: state.timeline,
       nextSourceId: state.nextSourceId,
@@ -1037,6 +1043,7 @@ function loadState() {
     const data = JSON.parse(saved);
     if (data.raceDuration)       state.raceDuration       = data.raceDuration;
     if (data.targetCarbsPerHour) state.targetCarbsPerHour = data.targetCarbsPerHour;
+    if (data.targetWaterPerHour !== undefined) state.targetWaterPerHour = data.targetWaterPerHour;
     if (data.sources)            state.sources            = data.sources;
     if (data.timeline)           state.timeline           = data.timeline;
     if (data.nextSourceId)       state.nextSourceId       = data.nextSourceId;
@@ -1138,6 +1145,16 @@ function renderLeftPanel() {
           </div>
         </div>
       </div>
+      <div class="setting-row">
+        <div class="setting-label">${t('waterTarget')}<small>${t('waterTargetUnit')}</small></div>
+        <div class="num-wrap">
+          <input class="num-input" type="number" id="inputWaterTarget" min="0" max="2000" step="50" value="${state.targetWaterPerHour}" />
+          <div class="num-stepper">
+            <button class="num-step" data-action="step-num" data-target="inputWaterTarget" data-step="50">&#9650;</button>
+            <button class="num-step" data-action="step-num" data-target="inputWaterTarget" data-step="-50">&#9660;</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="panel-section" style="flex:1;">
       <div class="panel-title">${t('nutritionSources')}</div>
@@ -1192,9 +1209,7 @@ function renderMainArea() {
       <div class="chart-header">
         <div class="chart-title">${t('chartTitle')}</div>
         <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--green-bar)"></div>${t('legendOnTarget')}</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--orange-bar)"></div>${t('legendNear')}</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--red-bar)"></div>${t('legendBelow')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div>${t('carbTarget')}</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--chart-water)"></div>${t('legendWater')}</div>
         </div>
       </div>
@@ -1324,13 +1339,14 @@ function drawChart() {
 
   const n = state.raceDuration;
   const target = state.targetCarbsPerHour;
+  const waterTarget = state.targetWaterPerHour;
   const carbsData = [], waterData = [];
   for (let i = 0; i < n; i++) {
     carbsData.push(carbsForHour(i));
     waterData.push(waterForHour(i));
   }
   const maxCarbs = Math.max(target * 1.3, ...carbsData, 10);
-  const maxWater = Math.max(...waterData, 100);
+  const maxWater = Math.max(waterTarget * 1.3, ...waterData, 100);
 
   const PAD_L = 44, PAD_R = 44, PAD_T = 14, PAD_B = 44;
   const BAR_OFFSET = 48; // gap before first bar — target label lives here
@@ -1369,7 +1385,7 @@ function drawChart() {
     // Carbs bar
     const cv = carbsData[i];
     const pct = target > 0 ? cv / target : 1;
-    const carbsColor = pct >= 1 ? C.green : pct >= 0.7 ? C.orange : C.red;
+    const carbsColor = cs.getPropertyValue('--primary').trim();
     const cbH = chartH * (cv / maxCarbs);
     const cx = slotX, cy = baseY - cbH;
     if (cbH > 0) {
@@ -1413,7 +1429,7 @@ function drawChart() {
     }
   }
 
-  // Carbs target line — label sits in BAR_OFFSET space before first bar
+  // Carbs target line
   if (target > 0) {
     const ty = baseY - chartH * (target / maxCarbs);
     ctx.save();
@@ -1426,6 +1442,21 @@ function drawChart() {
     ctx.font = 'bold 10px -apple-system, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(target + 'g', PAD_L + 2, ty - 4);
+  }
+
+  // Water target line
+  if (waterTarget > 0) {
+    const wy = baseY - chartH * (waterTarget / maxWater);
+    ctx.save();
+    ctx.strokeStyle = C.water;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(PAD_L, wy); ctx.lineTo(W - PAD_R, wy); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = C.water;
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(waterTarget + 'ml', W - PAD_R - 2, wy - 4);
   }
 }
 
@@ -1444,6 +1475,11 @@ function attachEvents() {
   if (tgtInput) tgtInput.addEventListener('input', e => {
     const v = parseInt(e.target.value, 10);
     if (!isNaN(v) && v >= 0) { state.targetCarbsPerHour = v; render(); }
+  });
+  const wtrInput = document.getElementById('inputWaterTarget');
+  if (wtrInput) wtrInput.addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (!isNaN(v) && v >= 0) { state.targetWaterPerHour = v; render(); }
   });
   const formName  = document.getElementById('formName');
   const formCarbs = document.getElementById('formCarbs');
