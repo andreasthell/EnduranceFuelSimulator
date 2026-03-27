@@ -157,22 +157,53 @@
       font-weight: 400;
       color: var(--text-muted);
     }
-    .num-input {
-      width: 80px;
+    .num-wrap {
+      display: flex;
+      align-items: stretch;
       border: 1.5px solid var(--border);
       border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 0.9rem;
-      color: var(--text);
       background: var(--bg);
-      text-align: right;
-      transition: border-color 0.15s;
+      overflow: hidden;
+      transition: border-color 0.15s, background 0.15s;
     }
-    .num-input:focus {
-      outline: none;
+    .num-wrap:focus-within {
       border-color: var(--primary-light);
       background: var(--input-focus-bg);
     }
+    .num-input {
+      width: 54px;
+      border: none;
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: transparent;
+      text-align: right;
+      -moz-appearance: textfield;
+    }
+    .num-input:focus { outline: none; }
+    .num-input::-webkit-inner-spin-button,
+    .num-input::-webkit-outer-spin-button { display: none; }
+    .num-stepper {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+    }
+    .num-step {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.5rem;
+      line-height: 1;
+      padding: 3px 6px;
+      transition: background 0.1s, color 0.1s;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .num-step:hover { background: var(--btn-icon-hover-bg); color: var(--text); }
+    .num-step + .num-step { border-top: 1px solid var(--border); }
 
     /* Source library */
     .source-list {
@@ -239,6 +270,22 @@
       transition: background 0.15s, color 0.15s;
     }
     .btn-icon:hover { background: var(--btn-icon-hover-bg); color: var(--red); }
+    .btn-edit { opacity: 0; transition: opacity 0.15s, background 0.15s, color 0.15s; }
+    .source-card:hover .btn-edit { opacity: 1; }
+    .btn-edit:hover { color: var(--primary); }
+    .btn-cancel {
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex: 1;
+    }
+    .btn-cancel:hover { border-color: var(--text-muted); color: var(--text); }
 
     /* Add source form */
     .add-form { display: flex; flex-direction: column; gap: 8px; }
@@ -258,6 +305,9 @@
       border-color: var(--primary-light);
       background: var(--input-focus-bg);
     }
+    .text-input[type=number]::-webkit-inner-spin-button,
+    .text-input[type=number]::-webkit-outer-spin-button { display: none; }
+    .text-input[type=number] { -moz-appearance: textfield; }
     .mini-input { width: 80px; flex-shrink: 0; }
     .form-hint { font-size: 0.72rem; color: var(--text-muted); }
 
@@ -771,6 +821,7 @@ const state = {
   compactTimeline: true,
   lang: 'en',
   theme: '',
+  editingSourceId: null,
 };
 
 function escapeHtml(str) {
@@ -828,6 +879,9 @@ const TRANSLATIONS = {
     pcs: 'pcs',
     packTotal: 'Total',
     noItemsPacked: 'No sources placed in the timeline',
+    editSource: 'Edit source',
+    saveSource: 'Save',
+    cancelEdit: 'Cancel',
   },
   sv: {
     appTitle: 'N\u00e4ringsplanerare',
@@ -874,6 +928,9 @@ const TRANSLATIONS = {
     pcs: 'st',
     packTotal: 'Totalt',
     noItemsPacked: 'Inga k\u00e4llor placerade i tidslinjen',
+    editSource: 'Redigera k\u00e4lla',
+    saveSource: 'Spara',
+    cancelEdit: 'Avbryt',
   },
 };
 
@@ -976,6 +1033,23 @@ function renderLeftPanel() {
     ? `<p style="font-size:0.8rem;color:var(--text-muted);text-align:center;padding:10px 0;">${t('noSources')}</p>`
     : state.sources.map((src, idx) => {
         const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+        if (state.editingSourceId === src.id) {
+          return `
+            <div class="source-edit-form" style="border-left:4px solid ${color};border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+              <div class="form-row">
+                <input class="text-input" type="text" id="editIcon-${src.id}" value="${escapeHtml(src.icon)}" maxlength="2" style="width:52px;flex-shrink:0;text-align:center;font-size:1.1rem;" />
+                <input class="text-input" type="text" id="editName-${src.id}" value="${escapeHtml(src.name)}" maxlength="40" />
+              </div>
+              <div class="form-row">
+                <div style="flex:1;"><input class="text-input" type="number" id="editCarbs-${src.id}" value="${src.carbs}" min="0" max="999" step="1" /><div class="form-hint" style="margin-top:3px;">${t('carbsHint')}</div></div>
+                <div style="flex:1;"><input class="text-input" type="number" id="editWater-${src.id}" value="${src.water}" min="0" max="9999" step="10" /><div class="form-hint" style="margin-top:3px;">${t('waterHint')}</div></div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn-primary" data-action="save-source" data-source-id="${src.id}" style="flex:1;">${t('saveSource')}</button>
+                <button class="btn-cancel" data-action="cancel-edit">${t('cancelEdit')}</button>
+              </div>
+            </div>`;
+        }
         return `
           <div class="source-card" draggable="true" data-source-id="${src.id}" style="border-left-color: ${color};" id="srcCard-${src.id}">
             <div class="source-icon-badge" style="background:${color}22; color:${color};">${src.icon || escapeHtml(src.name[0].toUpperCase())}</div>
@@ -983,6 +1057,7 @@ function renderLeftPanel() {
               <div class="source-card-name">${escapeHtml(src.name)}</div>
               <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} ${t('carbsShort')}` : ''}${src.water > 0 ? `${src.carbs > 0 ? ' &bull; ' : ''}${src.water} ml` : ''}</div>
             </div>
+            <button class="btn-icon btn-edit" data-action="edit-source" data-source-id="${src.id}" title="${t('editSource')}">&#x270E;</button>
             <button class="btn-icon btn-pack-toggle ${src.pack !== false ? 'active' : ''}" data-action="toggle-pack" data-source-id="${src.id}" title="${src.pack !== false ? t('excludeFromPacking') : t('includeInPacking')}">&#x1F4E6;</button>
             <button class="btn-icon" data-action="delete-source" data-source-id="${src.id}" title="${t('removeSource')}">&#x2715;</button>
           </div>`;
@@ -993,11 +1068,23 @@ function renderLeftPanel() {
       <div class="panel-title">${t('raceSettings')}</div>
       <div class="setting-row">
         <div class="setting-label">${t('raceDuration')}<small>${t('raceDurationUnit')}</small></div>
-        <input class="num-input" type="number" id="inputDuration" min="1" max="24" step="1" value="${state.raceDuration}" />
+        <div class="num-wrap">
+          <input class="num-input" type="number" id="inputDuration" min="1" max="24" step="1" value="${state.raceDuration}" />
+          <div class="num-stepper">
+            <button class="num-step" data-action="step-num" data-target="inputDuration" data-step="1">&#9650;</button>
+            <button class="num-step" data-action="step-num" data-target="inputDuration" data-step="-1">&#9660;</button>
+          </div>
+        </div>
       </div>
       <div class="setting-row">
         <div class="setting-label">${t('carbTarget')}<small>${t('carbTargetUnit')}</small></div>
-        <input class="num-input" type="number" id="inputTarget" min="0" max="200" step="5" value="${state.targetCarbsPerHour}" />
+        <div class="num-wrap">
+          <input class="num-input" type="number" id="inputTarget" min="0" max="200" step="5" value="${state.targetCarbsPerHour}" />
+          <div class="num-stepper">
+            <button class="num-step" data-action="step-num" data-target="inputTarget" data-step="5">&#9650;</button>
+            <button class="num-step" data-action="step-num" data-target="inputTarget" data-step="-5">&#9660;</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="panel-section" style="flex:1;">
@@ -1295,6 +1382,49 @@ function attachEvents() {
     state.sources.push({ id: state.nextSourceId++, name, carbs, water: isNaN(water) ? 0 : Math.max(0, water), icon: state.formData.icon.trim(), pack: true });
     state.formData = { name: '', carbs: '', water: '', icon: '' };
     render();
+  });
+  document.querySelectorAll('[data-action="step-num"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      if (!input) return;
+      const step = parseFloat(btn.dataset.step);
+      const min  = parseFloat(input.min);
+      const max  = parseFloat(input.max);
+      let val = parseFloat(input.value) + step;
+      if (!isNaN(min)) val = Math.max(min, val);
+      if (!isNaN(max)) val = Math.min(max, val);
+      input.value = val;
+      input.dispatchEvent(new Event('input'));
+    });
+  });
+  document.querySelectorAll('[data-action="edit-source"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      state.editingSourceId = parseInt(btn.dataset.sourceId, 10);
+      render();
+    });
+  });
+  document.querySelectorAll('[data-action="cancel-edit"]').forEach(btn => {
+    btn.addEventListener('click', () => { state.editingSourceId = null; render(); });
+  });
+  document.querySelectorAll('[data-action="save-source"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const sid  = parseInt(btn.dataset.sourceId, 10);
+      const src  = state.sources.find(s => s.id === sid);
+      if (!src) return;
+      const name  = document.getElementById(`editName-${sid}`)?.value.trim();
+      const carbs = parseInt(document.getElementById(`editCarbs-${sid}`)?.value, 10);
+      const water = parseInt(document.getElementById(`editWater-${sid}`)?.value, 10);
+      const icon  = document.getElementById(`editIcon-${sid}`)?.value.trim();
+      if (!name || isNaN(carbs) || carbs < 0) return;
+      src.name  = name;
+      src.carbs = carbs;
+      src.water = isNaN(water) ? 0 : Math.max(0, water);
+      src.icon  = icon;
+      state.editingSourceId = null;
+      render();
+    });
   });
   document.querySelectorAll('[data-action="toggle-pack"]').forEach(btn => {
     btn.addEventListener('click', e => {
