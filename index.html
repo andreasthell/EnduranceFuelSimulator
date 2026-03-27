@@ -239,7 +239,27 @@
       justify-content: center;
       font-size: 1.1rem;
       flex-shrink: 0;
+      position: relative;
+      cursor: pointer;
     }
+    .source-icon-badge span { transition: opacity 0.15s; pointer-events: none; }
+    .btn-edit-icon {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s;
+      color: inherit;
+    }
+    .source-card:hover .source-icon-badge span { opacity: 0.15; }
+    .source-card:hover .btn-edit-icon { opacity: 1; }
     .source-card-info { flex: 1; min-width: 0; }
     .source-card-name {
       font-size: 0.875rem;
@@ -270,9 +290,6 @@
       transition: background 0.15s, color 0.15s;
     }
     .btn-icon:hover { background: var(--btn-icon-hover-bg); color: var(--red); }
-    .btn-edit { opacity: 0; transition: opacity 0.15s, background 0.15s, color 0.15s; }
-    .source-card:hover .btn-edit { opacity: 1; }
-    .btn-edit:hover { color: var(--primary); }
     .btn-cancel {
       background: var(--bg);
       color: var(--text-muted);
@@ -1052,12 +1069,14 @@ function renderLeftPanel() {
         }
         return `
           <div class="source-card" draggable="true" data-source-id="${src.id}" style="border-left-color: ${color};" id="srcCard-${src.id}">
-            <div class="source-icon-badge" style="background:${color}22; color:${color};">${src.icon || escapeHtml(src.name[0].toUpperCase())}</div>
+            <div class="source-icon-badge" style="background:${color}22; color:${color};">
+              <span>${src.icon || escapeHtml(src.name[0].toUpperCase())}</span>
+              <button class="btn-edit-icon" data-action="edit-source" data-source-id="${src.id}" title="${t('editSource')}">&#x270E;</button>
+            </div>
             <div class="source-card-info">
               <div class="source-card-name">${escapeHtml(src.name)}</div>
               <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} ${t('carbsShort')}` : ''}${src.water > 0 ? `${src.carbs > 0 ? ' &bull; ' : ''}${src.water} ml` : ''}</div>
             </div>
-            <button class="btn-icon btn-edit" data-action="edit-source" data-source-id="${src.id}" title="${t('editSource')}">&#x270E;</button>
             <button class="btn-icon btn-pack-toggle ${src.pack !== false ? 'active' : ''}" data-action="toggle-pack" data-source-id="${src.id}" title="${src.pack !== false ? t('excludeFromPacking') : t('includeInPacking')}">&#x1F4E6;</button>
             <button class="btn-icon" data-action="delete-source" data-source-id="${src.id}" title="${t('removeSource')}">&#x2715;</button>
           </div>`;
