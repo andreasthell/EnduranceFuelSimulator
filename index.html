@@ -329,6 +329,26 @@
     }
     .btn-cancel:hover { border-color: var(--text-muted); color: var(--text); }
 
+    /* ── Emoji picker ── */
+    .emoji-wrap { position: relative; flex-shrink: 0; }
+    .emoji-grid {
+      display: none; position: absolute; top: calc(100% + 6px); left: 0;
+      background: var(--card-bg); border: 1.5px solid var(--border);
+      border-radius: 10px; box-shadow: var(--shadow-md);
+      padding: 8px; z-index: 250;
+      display: none;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 2px; width: 232px;
+    }
+    .emoji-grid.open { display: grid; }
+    .emoji-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.2rem; width: 28px; height: 28px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s;
+    }
+    .emoji-btn:hover { background: var(--btn-icon-hover-bg); }
+
     /* Add source form */
     .add-form { display: flex; flex-direction: column; gap: 8px; }
     .form-row { display: flex; gap: 8px; }
@@ -1237,7 +1257,10 @@ function renderLeftPanel() {
       <div class="add-form">
         <div class="panel-title" style="margin-bottom:8px;">${t('addSourceTitle')}</div>
         <div class="form-row">
-          <input class="text-input" type="text" id="formIcon" placeholder="🙂" value="${escapeHtml(state.formData.icon)}" maxlength="2" style="width:52px;flex-shrink:0;text-align:center;font-size:1.1rem;" />
+          <div class="emoji-wrap">
+            <input class="text-input" type="text" id="formIcon" placeholder="🙂" value="${escapeHtml(state.formData.icon)}" maxlength="2" style="width:52px;text-align:center;font-size:1.1rem;cursor:pointer;" readonly />
+            <div class="emoji-grid" id="emojiGrid"></div>
+          </div>
           <input class="text-input" type="text" id="formName" placeholder="${t('namePlaceholder')}" value="${escapeHtml(state.formData.name)}" maxlength="40" />
         </div>
         <div class="form-row">
@@ -1559,8 +1582,26 @@ function attachEvents() {
   const formName  = document.getElementById('formName');
   const formCarbs = document.getElementById('formCarbs');
   const formWater = document.getElementById('formWater');
-  const formIcon  = document.getElementById('formIcon');
-  if (formIcon)  formIcon.addEventListener('input',  e => { state.formData.icon  = e.target.value; });
+  const formIcon = document.getElementById('formIcon');
+  const emojiGrid = document.getElementById('emojiGrid');
+  const EMOJIS = ['⚡','🍫','🍼','💧','🥤','🍌','🍊','🍋','🥝','🍇','🍓','🫐','🍎','🍑','🧃','🥛','🍵','☕','🧋','🍬','🍯','🥜','🌰','🥨','🥖','🏃','🚴','🏊','💪','🔋','⭐','🎯','🏅','🥇','🫙','🧂','🍕','🌮'];
+  if (formIcon && emojiGrid) {
+    emojiGrid.innerHTML = EMOJIS.map(e =>
+      `<button class="emoji-btn" data-emoji="${e}" type="button">${e}</button>`).join('');
+    formIcon.addEventListener('click', () => emojiGrid.classList.toggle('open'));
+    emojiGrid.addEventListener('click', e => {
+      const btn = e.target.closest('.emoji-btn');
+      if (!btn) return;
+      state.formData.icon = btn.dataset.emoji;
+      formIcon.value = btn.dataset.emoji;
+      emojiGrid.classList.remove('open');
+    });
+    document.addEventListener('click', e => {
+      if (!formIcon.contains(e.target) && !emojiGrid.contains(e.target)) {
+        emojiGrid.classList.remove('open');
+      }
+    }, true);
+  }
   if (formName)  formName.addEventListener('input',  e => { state.formData.name  = e.target.value; });
   if (formCarbs) formCarbs.addEventListener('input', e => { state.formData.carbs = e.target.value; });
   if (formWater) formWater.addEventListener('input', e => { state.formData.water = e.target.value; });
