@@ -732,7 +732,6 @@
     .plan-hour-label { font-weight: 700; min-width: 26px; flex-shrink: 0; }
     .plan-hour-icons { flex: 1; }
     .plan-hour-stats { color: var(--text-muted); white-space: nowrap; font-size: 0.75rem; }
-    .plan-hour-status { min-width: 14px; text-align: right; font-weight: 700; flex-shrink: 0; }
 
     @media print {
       header, .left-panel, .panel-overlay, .source-picker,
@@ -1261,8 +1260,6 @@ function renderMainArea() {
     const hw = waterForHour(i);
     const pct = state.targetCarbsPerHour > 0 ? hc / state.targetCarbsPerHour : 1;
     if (items.length) hasAnyItems = true;
-    const statusChar = items.length === 0 ? '' : pct >= 1 ? '' : pct >= 0.7 ? '~' : '✗';
-    const statusColor = pct >= 1 ? 'var(--green)' : pct >= 0.7 ? 'var(--orange)' : 'var(--red)';
     const icons = items.map(item => {
       const src = state.sources.find(s => s.id === item.sourceId);
       return src ? (src.icon || escapeHtml(src.name[0].toUpperCase())) : '';
@@ -1272,7 +1269,6 @@ function renderMainArea() {
       <span class="plan-hour-label">T${i + 1}</span>
       <span class="plan-hour-icons">${icons || '<span style="color:var(--text-muted)">—</span>'}</span>
       <span class="plan-hour-stats">${stats}</span>
-      ${statusChar ? `<span class="plan-hour-status" style="color:${statusColor}">${statusChar}</span>` : ''}
     </div>`);
   }
   const planHtml = `<div class="plan-card"><div class="receipt">
