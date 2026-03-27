@@ -283,18 +283,22 @@
     }
     .chart-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
+      gap: 10px;
       margin-bottom: 16px;
+      flex-wrap: wrap;
     }
     .chart-title {
       font-size: 0.875rem;
       font-weight: 700;
       color: var(--text);
+      flex-shrink: 0;
     }
     .chart-legend {
       display: flex;
-      gap: 14px;
+      flex-wrap: wrap;
+      gap: 8px 14px;
       font-size: 0.72rem;
       color: var(--text-muted);
     }
@@ -771,7 +775,7 @@ const TRANSLATIONS = {
     legendWater: 'Water (ml)',
     hour: 'Hour',
     dragHere: 'Tap or drag to add',
-    timelineTitle: 'Timeline \u2014 drag sources to hours',
+    timelineTitle: 'Timeline',
     detailView: '\u229e Detail view',
     compactView: '\u229f Compact view',
     removeItem: 'Remove',
@@ -817,7 +821,7 @@ const TRANSLATIONS = {
     legendWater: 'Vatten (ml)',
     hour: 'Timme',
     dragHere: 'Tryck eller dra för att lägga till',
-    timelineTitle: 'Tidslinje \u2014 dra n\u00e4ringsk\u00e4llor till timmarna',
+    timelineTitle: 'Tidslinje',
     detailView: '\u229e Detaljvy',
     compactView: '\u229f Kompaktvy',
     removeItem: 'Ta bort',
