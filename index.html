@@ -393,20 +393,13 @@
     .placed-item.compact:hover .placed-item-icon { opacity: 0; }
     .placed-item.compact:hover .btn-icon { opacity: 1; }
 
-    .timeline-scroll {
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-
     .timeline-grid {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
       gap: 10px;
-      min-width: max-content;
     }
 
     .hour-col {
-      width: 130px;
-      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -1058,7 +1051,7 @@ function renderMainArea() {
         <span>${t('timelineTitle')}</span>
         <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? t('detailView') : t('compactView')}</button>
       </div>
-      <div class="timeline-scroll"><div class="timeline-grid">${hourCols.join('')}</div></div>
+      <div class="timeline-grid">${hourCols.join('')}</div>
     </div>` + packHtml;
 
   requestAnimationFrame(() => drawChart());
