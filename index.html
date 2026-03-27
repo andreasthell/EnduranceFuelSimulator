@@ -928,7 +928,7 @@ const TRANSLATIONS = {
     saveSource: 'Save',
     cancelEdit: 'Cancel',
     racePlan: 'Race Plan',
-    printPlan: 'Print / Save PDF',
+    printPlan: 'Print / Save plan',
     planEmpty: 'No items in timeline',
   },
   sv: {
@@ -980,7 +980,7 @@ const TRANSLATIONS = {
     saveSource: 'Spara',
     cancelEdit: 'Avbryt',
     racePlan: 'Loppplan',
-    printPlan: 'Skriv ut / Spara PDF',
+    printPlan: 'Skriv ut / Spara plan',
     planEmpty: 'Inga objekt i tidslinjen',
   },
 };
@@ -1261,7 +1261,7 @@ function renderMainArea() {
     const hw = waterForHour(i);
     const pct = state.targetCarbsPerHour > 0 ? hc / state.targetCarbsPerHour : 1;
     if (items.length) hasAnyItems = true;
-    const statusChar = items.length === 0 ? '' : pct >= 1 ? '✓' : pct >= 0.7 ? '~' : '✗';
+    const statusChar = items.length === 0 ? '' : pct >= 1 ? '' : pct >= 0.7 ? '~' : '✗';
     const statusColor = pct >= 1 ? 'var(--green)' : pct >= 0.7 ? 'var(--orange)' : 'var(--red)';
     const icons = items.map(item => {
       const src = state.sources.find(s => s.id === item.sourceId);
