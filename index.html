@@ -1272,7 +1272,7 @@ function renderMainArea() {
       <span class="plan-hour-label">T${i + 1}</span>
       <span class="plan-hour-icons">${icons || '<span style="color:var(--text-muted)">—</span>'}</span>
       <span class="plan-hour-stats">${stats}</span>
-      <span class="plan-hour-status" style="color:${statusChar ? statusColor : 'transparent'}">${statusChar || '·'}</span>
+      ${statusChar ? `<span class="plan-hour-status" style="color:${statusColor}">${statusChar}</span>` : ''}
     </div>`);
   }
   const planHtml = `<div class="plan-card"><div class="receipt">
