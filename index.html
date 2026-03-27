@@ -920,6 +920,7 @@
     <div class="picker-list" id="pickerList"></div>
   </div>
 </div>
+<div id="chartTooltip" style="display:none;position:fixed;pointer-events:none;z-index:400;background:var(--card-bg);border:1.5px solid var(--border);border-radius:8px;padding:7px 11px;font-size:0.8rem;color:var(--text);box-shadow:var(--shadow-md);line-height:1.5;"></div>
 <div class="app-layout">
   <aside class="left-panel" id="leftPanel"></aside>
   <main class="main-area" id="mainArea"></main>
@@ -927,6 +928,7 @@
 
 <script>
 const COLOR_PALETTE = ['#1E88E5','#FB8C00','#43A047','#E53935','#8E24AA','#00ACC1','#F4511E'];
+let chartHitAreas = [];
 
 const state = {
   raceDuration: 3,
@@ -1447,6 +1449,32 @@ function renderMainArea() {
 function drawChart() {
   const canvas = document.getElementById('barChart');
   if (!canvas) return;
+  chartHitAreas = [];
+  if (!canvas._tooltipBound) {
+    canvas._tooltipBound = true;
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / (window.devicePixelRatio || 1) / rect.width;
+      const scaleY = canvas.height / (window.devicePixelRatio || 1) / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+      const hit = chartHitAreas.find(a => mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h);
+      const tip = document.getElementById('chartTooltip');
+      if (hit && tip) {
+        const pct = hit.total > 0 ? Math.round(hit.carbs / hit.total * 100) : 100;
+        tip.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${hit.color};margin-right:5px;"></span><strong>${hit.icon ? hit.icon + ' ' : ''}${hit.name}</strong><br>${hit.carbs}g &mdash; ${pct}%`;
+        tip.style.display = 'block';
+        tip.style.left = (e.clientX + 12) + 'px';
+        tip.style.top  = (e.clientY - 10) + 'px';
+      } else if (tip) {
+        tip.style.display = 'none';
+      }
+    });
+    canvas.addEventListener('mouseleave', () => {
+      const tip = document.getElementById('chartTooltip');
+      if (tip) tip.style.display = 'none';
+    });
+  }
   const cs = getComputedStyle(document.documentElement);
   const C = {
     grid:      cs.getPropertyValue('--chart-grid').trim(),
@@ -1526,7 +1554,7 @@ function drawChart() {
     });
     const segments = state.sources
       .filter(src => segMap[src.id])
-      .map(src => ({ carbs: segMap[src.id], color: COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length] }));
+      .map(src => ({ name: src.name, icon: src.icon, carbs: segMap[src.id], color: COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length] }));
     let stackY = baseY;
     for (let s = 0; s < segments.length; s++) {
       const seg = segments[s];
@@ -1545,6 +1573,7 @@ function drawChart() {
       } else {
         ctx.fillRect(cx, segY, barW, segH);
       }
+      chartHitAreas.push({ x: cx, y: segY, w: barW, h: segH, name: seg.name, icon: seg.icon, carbs: seg.carbs, total: cv, color: seg.color });
       stackY -= segH;
     }
 
