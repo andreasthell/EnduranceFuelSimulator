@@ -25,6 +25,53 @@
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
       --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
       --radius: 10px;
+      --btn-icon-hover-bg: #E5EAF2;
+      --badge-default-bg: #EEF2FA;
+      --badge-good-bg: #E8F5E9;
+      --badge-warn-bg: #FFF3E0;
+      --badge-bad-bg: #FFEBEE;
+      --drop-dragover-bg: #EBF2FD;
+      --picker-active-bg: #E3EDFA;
+      --scrollbar-thumb: #C5CDE0;
+      --scrollbar-thumb-hover: #9FAACC;
+      --chart-grid: #E8EDF5;
+      --chart-carbs-axis: #9FAACC;
+      --chart-water: #00ACC1;
+      --chart-carbs-text: #1A2340;
+      --chart-water-text: #007b8a;
+      --chart-hour-label: #6B7A99;
+      --chart-target: #1565C0;
+      --input-focus-bg: #fff;
+    }
+
+    :root.dark {
+      --primary: #5B9BD5;
+      --primary-light: #7EB3E8;
+      --primary-dark: #3A7DC4;
+      --bg: #141820;
+      --card-bg: #1E2330;
+      --border: #2E3650;
+      --text: #E2E8F4;
+      --text-muted: #8A97B8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.40);
+      --btn-icon-hover-bg: #2A3048;
+      --badge-default-bg: #252C40;
+      --badge-good-bg: #1A2E1C;
+      --badge-warn-bg: #2E2010;
+      --badge-bad-bg: #2E1616;
+      --drop-dragover-bg: #1E2B45;
+      --picker-active-bg: #1C2A40;
+      --scrollbar-thumb: #3A4460;
+      --scrollbar-thumb-hover: #4A5578;
+      --chart-grid: #252C40;
+      --chart-carbs-axis: #4A5578;
+      --chart-water: #00BCD4;
+      --chart-carbs-text: #E2E8F4;
+      --chart-water-text: #00ACC1;
+      --chart-hour-label: #8A97B8;
+      --chart-target: #5B9BD5;
+      --input-focus-bg: #252C40;
     }
 
     body {
@@ -51,6 +98,8 @@
     .version-badge { font-size: 0.75rem; opacity: 0.6; font-family: monospace; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 10px; }
     .btn-lang { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 10px; cursor: pointer; letter-spacing: 0.05em; margin-left: 8px; }
     .btn-lang:hover { background: rgba(255,255,255,0.28); }
+    .btn-theme { background: none; border: none; cursor: pointer; font-size: 1.15rem; padding: 4px 7px; border-radius: 6px; line-height: 1; transition: background 0.15s; }
+    .btn-theme:hover { background: rgba(255,255,255,0.18); }
 
     /* ── Layout ── */
     .app-layout {
@@ -122,7 +171,7 @@
     .num-input:focus {
       outline: none;
       border-color: var(--primary-light);
-      background: #fff;
+      background: var(--input-focus-bg);
     }
 
     /* Source library */
@@ -189,7 +238,7 @@
       flex-shrink: 0;
       transition: background 0.15s, color 0.15s;
     }
-    .btn-icon:hover { background: #E5EAF2; color: var(--red); }
+    .btn-icon:hover { background: var(--btn-icon-hover-bg); color: var(--red); }
 
     /* Add source form */
     .add-form { display: flex; flex-direction: column; gap: 8px; }
@@ -207,7 +256,7 @@
     .text-input:focus, .mini-input:focus {
       outline: none;
       border-color: var(--primary-light);
-      background: #fff;
+      background: var(--input-focus-bg);
     }
     .mini-input { width: 80px; flex-shrink: 0; }
     .form-hint { font-size: 0.72rem; color: var(--text-muted); }
@@ -424,13 +473,13 @@
       font-weight: 600;
       padding: 2px 6px;
       border-radius: 20px;
-      background: #EEF2FA;
+      background: var(--badge-default-bg);
       color: var(--primary);
       margin-bottom: 2px;
     }
-    .hour-carbs-badge.good { background: #E8F5E9; color: var(--green); }
-    .hour-carbs-badge.warn { background: #FFF3E0; color: var(--orange); }
-    .hour-carbs-badge.bad  { background: #FFEBEE; color: var(--red); }
+    .hour-carbs-badge.good { background: var(--badge-good-bg); color: var(--green); }
+    .hour-carbs-badge.warn { background: var(--badge-warn-bg); color: var(--orange); }
+    .hour-carbs-badge.bad  { background: var(--badge-bad-bg); color: var(--red); }
 
     .drop-zone {
       min-height: 120px;
@@ -444,7 +493,7 @@
     }
     .drop-zone.dragover {
       border-color: var(--primary-light);
-      background: #EBF2FD;
+      background: var(--drop-dragover-bg);
     }
     .drop-zone-hint {
       color: var(--text-muted);
@@ -648,7 +697,7 @@
       color: var(--text);
       transition: background 0.12s;
     }
-    .picker-item:active { background: #E3EDFA; }
+    .picker-item:active { background: var(--picker-active-bg); }
     .picker-item-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
     .picker-item-name { font-weight: 600; flex: 1; }
     .picker-item-meta { font-size: 0.75rem; color: var(--text-muted); }
@@ -669,8 +718,8 @@
     /* Scrollbar styling */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #C5CDE0; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #9FAACC; }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
   </style>
 </head>
 <body>
@@ -683,7 +732,8 @@
   <h1 id="appTitle"></h1>
   <span id="appSubtitle" class="header-subtitle"></span>
   <span style="flex:1"></span>
-  <span class="version-badge">v0.8.0</span>
+  <span class="version-badge">v0.9.0</span>
+  <button class="btn-theme" id="btnTheme" aria-label="Toggle dark mode">🌙</button>
   <button class="btn-lang" id="btnLang">SV</button>
 </header>
 
@@ -720,6 +770,7 @@ const state = {
   formData: { name: '', carbs: '', water: '', icon: '' },
   compactTimeline: true,
   lang: 'en',
+  theme: '',
 };
 
 function escapeHtml(str) {
@@ -867,6 +918,7 @@ function saveState() {
       nextInstanceId: state.nextInstanceId,
       compactTimeline: state.compactTimeline,
       lang: state.lang,
+      theme: state.theme,
     }));
   } catch (e) {}
 }
@@ -884,7 +936,16 @@ function loadState() {
     if (data.nextInstanceId)     state.nextInstanceId     = data.nextInstanceId;
     if (data.compactTimeline !== undefined) state.compactTimeline = data.compactTimeline;
     if (data.lang) state.lang = data.lang;
+    if (data.theme) state.theme = data.theme;
   } catch (e) {}
+}
+
+function applyTheme(theme) {
+  state.theme = theme;
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+  const btn = document.getElementById('btnTheme');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  drawChart();
 }
 
 function render() {
@@ -900,9 +961,11 @@ function renderHeader() {
   const titleEl = document.getElementById('appTitle');
   const subtitleEl = document.getElementById('appSubtitle');
   const btnLang = document.getElementById('btnLang');
+  const btnTheme = document.getElementById('btnTheme');
   if (titleEl) titleEl.textContent = t('appTitle');
   if (subtitleEl) subtitleEl.textContent = t('appSubtitle');
   if (btnLang) btnLang.textContent = t('switchLangBtn');
+  if (btnTheme) btnTheme.textContent = state.theme === 'dark' ? '☀️' : '🌙';
   document.documentElement.lang = state.lang;
   document.title = t('appTitle');
 }
@@ -993,7 +1056,7 @@ function renderMainArea() {
           <div class="legend-item"><div class="legend-dot" style="background:var(--green-bar)"></div>${t('legendOnTarget')}</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--orange-bar)"></div>${t('legendNear')}</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--red-bar)"></div>${t('legendBelow')}</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#00ACC1"></div>${t('legendWater')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--chart-water)"></div>${t('legendWater')}</div>
         </div>
       </div>
       <canvas id="barChart"></canvas>
@@ -1064,6 +1127,19 @@ function renderMainArea() {
 function drawChart() {
   const canvas = document.getElementById('barChart');
   if (!canvas) return;
+  const cs = getComputedStyle(document.documentElement);
+  const C = {
+    grid:      cs.getPropertyValue('--chart-grid').trim(),
+    carbsAxis: cs.getPropertyValue('--chart-carbs-axis').trim(),
+    water:     cs.getPropertyValue('--chart-water').trim(),
+    carbsText: cs.getPropertyValue('--chart-carbs-text').trim(),
+    waterText: cs.getPropertyValue('--chart-water-text').trim(),
+    hourLabel: cs.getPropertyValue('--chart-hour-label').trim(),
+    target:    cs.getPropertyValue('--chart-target').trim(),
+    green:     cs.getPropertyValue('--green-bar').trim(),
+    orange:    cs.getPropertyValue('--orange-bar').trim(),
+    red:       cs.getPropertyValue('--red-bar').trim(),
+  };
   const dpr = window.devicePixelRatio || 1;
   canvas.style.display = 'block';
   canvas.style.width = '100%';
@@ -1098,13 +1174,13 @@ function drawChart() {
   ctx.lineWidth = 1;
   for (let g = 0; g <= 4; g++) {
     const y = baseY - (g / 4) * chartH;
-    ctx.strokeStyle = '#E8EDF5';
+    ctx.strokeStyle = C.grid;
     ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
     ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillStyle = '#9FAACC';
+    ctx.fillStyle = C.carbsAxis;
     ctx.textAlign = 'right';
     ctx.fillText(Math.round((g / 4) * maxCarbs) + 'g', PAD_L - 4, y + 4);
-    ctx.fillStyle = '#00ACC1';
+    ctx.fillStyle = C.water;
     ctx.textAlign = 'left';
     ctx.fillText(Math.round((g / 4) * maxWater) + 'ml', W - PAD_R + 4, y + 4);
   }
@@ -1122,7 +1198,7 @@ function drawChart() {
     // Carbs bar
     const cv = carbsData[i];
     const pct = target > 0 ? cv / target : 1;
-    const carbsColor = pct >= 1 ? '#43A047' : pct >= 0.7 ? '#FB8C00' : '#E53935';
+    const carbsColor = pct >= 1 ? C.green : pct >= 0.7 ? C.orange : C.red;
     const cbH = chartH * (cv / maxCarbs);
     const cx = slotX, cy = baseY - cbH;
     if (cbH > 0) {
@@ -1141,7 +1217,7 @@ function drawChart() {
     const wx = slotX + barW + gap, wy = baseY - wbH;
     if (wbH > 0) {
       const r = Math.min(4, barW / 2, wbH);
-      ctx.fillStyle = '#00ACC1';
+      ctx.fillStyle = C.water;
       ctx.beginPath();
       ctx.moveTo(wx, wy + r); ctx.arcTo(wx, wy, wx + r, wy, r);
       ctx.arcTo(wx + barW, wy, wx + barW, wy + r, r);
@@ -1153,13 +1229,13 @@ function drawChart() {
     if (barW >= 22) {
       ctx.font = 'bold 10px -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      if (cv > 0) { ctx.fillStyle = '#1A2340'; ctx.fillText(cv + 'g', cx + barW / 2, baseY + 13); }
-      if (wv > 0) { ctx.fillStyle = '#007b8a'; ctx.fillText(wv + 'ml', wx + barW / 2, baseY + 13); }
+      if (cv > 0) { ctx.fillStyle = C.carbsText; ctx.fillText(cv + 'g', cx + barW / 2, baseY + 13); }
+      if (wv > 0) { ctx.fillStyle = C.waterText; ctx.fillText(wv + 'ml', wx + barW / 2, baseY + 13); }
     }
 
     // X label (hour) — only when slot is wide enough
     if (slotW >= 28) {
-      ctx.fillStyle = '#6B7A99';
+      ctx.fillStyle = C.hourLabel;
       ctx.font = '11px -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('T' + (i + 1), slotX + availW / 2, baseY + 28);
@@ -1170,12 +1246,12 @@ function drawChart() {
   if (target > 0) {
     const ty = baseY - chartH * (target / maxCarbs);
     ctx.save();
-    ctx.strokeStyle = '#1565C0';
+    ctx.strokeStyle = C.target;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 4]);
     ctx.beginPath(); ctx.moveTo(PAD_L, ty); ctx.lineTo(W - PAD_R, ty); ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = '#1565C0';
+    ctx.fillStyle = C.target;
     ctx.font = 'bold 10px -apple-system, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(target + 'g', PAD_L + 2, ty - 4);
@@ -1299,8 +1375,13 @@ function attachEvents() {
 
 window.addEventListener('resize', () => drawChart());
 loadState();
+if (!state.theme) {
+  state.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+document.documentElement.classList.toggle('dark', state.theme === 'dark');
 render();
 document.getElementById('btnLang').addEventListener('click', () => { state.lang = state.lang === 'en' ? 'sv' : 'en'; render(); });
+document.getElementById('btnTheme').addEventListener('click', () => { applyTheme(state.theme === 'dark' ? 'light' : 'dark'); saveState(); });
 
 // ── Panel toggle (mobile) ──
 function setPanelOpen(open) {
