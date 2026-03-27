@@ -646,7 +646,7 @@
       .summary-grid { grid-template-columns: 1fr 1fr; }
       .btn-icon { min-width: 28px; min-height: 28px; }
       .source-card { padding: 12px; }
-      .pack-card { max-width: 100%; }
+      .pack-card, .plan-card { max-width: 100%; }
     }
 
     /* Pack toggle button */
@@ -654,15 +654,6 @@
     .btn-pack-toggle.active { opacity: 1; }
 
     /* Packing list — receipt style */
-    .pack-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border);
-      margin-top: 16px;
-      max-width: 380px;
-    }
     .receipt {
       font-family: 'Courier New', Courier, monospace;
       font-size: 0.82rem;
@@ -721,6 +712,43 @@
       text-align: center;
       padding: 12px 0;
       font-family: inherit;
+    }
+
+    /* ── Print section ── */
+    .print-section { margin-top: 16px; }
+    .print-section-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+    .btn-print {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 6px; color: var(--text-muted);
+      font-size: 0.78rem; font-family: inherit;
+      padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-print:hover { border-color: var(--primary); color: var(--primary); }
+    .print-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+    .pack-card { background: var(--card-bg); border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); flex: 1; min-width: 220px; max-width: 380px; }
+    .plan-card { background: var(--card-bg); border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); flex: 1; min-width: 220px; max-width: 380px; }
+    .plan-hour-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; font-family: 'Courier New', Courier, monospace; font-size: 0.82rem; color: var(--text); }
+    .plan-hour-label { font-weight: 700; min-width: 26px; flex-shrink: 0; }
+    .plan-hour-icons { flex: 1; }
+    .plan-hour-stats { color: var(--text-muted); white-space: nowrap; font-size: 0.75rem; }
+    .plan-hour-status { min-width: 14px; text-align: right; font-weight: 700; flex-shrink: 0; }
+
+    @media print {
+      header, .left-panel, .panel-overlay, .source-picker,
+      .summary-grid, .chart-card, .timeline-card, .btn-print,
+      .print-section-actions { display: none !important; }
+      :root, :root.dark {
+        --bg: #fff; --card-bg: #fff; --border: #ccc;
+        --text: #000; --text-muted: #555;
+        --shadow-sm: none; --shadow-md: none;
+      }
+      body { background: #fff; }
+      .app-layout { display: block; }
+      .main-area { padding: 16px; }
+      .print-section { margin-top: 0; }
+      .print-row { gap: 24px; flex-wrap: nowrap; }
+      .pack-card, .plan-card { box-shadow: none; max-width: none; flex: 1; }
     }
 
     /* ── Source picker (bottom sheet) ── */
@@ -799,7 +827,7 @@
   <h1 id="appTitle"></h1>
   <span id="appSubtitle" class="header-subtitle"></span>
   <span style="flex:1"></span>
-  <span class="version-badge">v0.9.0</span>
+  <span class="version-badge">v1.0.0</span>
   <button class="btn-theme" id="btnTheme" aria-label="Toggle dark mode">🌙</button>
   <button class="btn-lang" id="btnLang">SV</button>
 </header>
@@ -899,6 +927,9 @@ const TRANSLATIONS = {
     editSource: 'Edit source',
     saveSource: 'Save',
     cancelEdit: 'Cancel',
+    racePlan: 'Race Plan',
+    printPlan: 'Print / Save PDF',
+    planEmpty: 'No items in timeline',
   },
   sv: {
     appTitle: 'N\u00e4ringsplanerare',
@@ -948,6 +979,9 @@ const TRANSLATIONS = {
     editSource: 'Redigera k\u00e4lla',
     saveSource: 'Spara',
     cancelEdit: 'Avbryt',
+    racePlan: 'Loppplan',
+    printPlan: 'Skriv ut / Spara PDF',
+    planEmpty: 'Inga objekt i tidslinjen',
   },
 };
 
@@ -1218,6 +1252,35 @@ function renderMainArea() {
     ${packedSources.length ? receiptRows.join('') + `<hr class="receipt-divider"><div class="receipt-total-row"><span>${t('packTotal')}</span><span>${totalPackCount} ${t('pcs')}</span></div>` : `<div class="pack-empty">${t('noItemsPacked')}</div>`}
   </div></div>`;
 
+  // Race plan
+  let hasAnyItems = false;
+  const planRows = [];
+  for (let i = 0; i < state.raceDuration; i++) {
+    const items = state.timeline[String(i)] || [];
+    const hc = carbsForHour(i);
+    const hw = waterForHour(i);
+    const pct = state.targetCarbsPerHour > 0 ? hc / state.targetCarbsPerHour : 1;
+    if (items.length) hasAnyItems = true;
+    const statusChar = items.length === 0 ? '' : pct >= 1 ? '✓' : pct >= 0.7 ? '~' : '✗';
+    const statusColor = pct >= 1 ? 'var(--green)' : pct >= 0.7 ? 'var(--orange)' : 'var(--red)';
+    const icons = items.map(item => {
+      const src = state.sources.find(s => s.id === item.sourceId);
+      return src ? (src.icon || escapeHtml(src.name[0].toUpperCase())) : '';
+    }).join('');
+    const stats = [hc > 0 ? hc + 'g' : '', hw > 0 ? hw + 'ml' : ''].filter(Boolean).join(' · ');
+    planRows.push(`<div class="plan-hour-row">
+      <span class="plan-hour-label">T${i + 1}</span>
+      <span class="plan-hour-icons">${icons || '<span style="color:var(--text-muted)">—</span>'}</span>
+      <span class="plan-hour-stats">${stats}</span>
+      <span class="plan-hour-status" style="color:${statusChar ? statusColor : 'transparent'}">${statusChar || '·'}</span>
+    </div>`);
+  }
+  const planHtml = `<div class="plan-card"><div class="receipt">
+    <div class="receipt-header">${t('racePlan')}</div>
+    <hr class="receipt-divider">
+    ${hasAnyItems ? planRows.join('') : `<div class="pack-empty">${t('planEmpty')}</div>`}
+  </div></div>`;
+
   main.innerHTML = summaryHtml + chartHtml + `
     <div class="timeline-card">
       <div class="timeline-header">
@@ -1225,7 +1288,13 @@ function renderMainArea() {
         <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? t('detailView') : t('compactView')}</button>
       </div>
       <div class="timeline-grid">${hourCols.join('')}</div>
-    </div>` + packHtml;
+    </div>
+    <div class="print-section">
+      <div class="print-section-actions">
+        <button class="btn-print" id="btnPrint">🖨 ${t('printPlan')}</button>
+      </div>
+      <div class="print-row">${packHtml}${planHtml}</div>
+    </div>`;
 
   requestAnimationFrame(() => drawChart());
 }
@@ -1368,6 +1437,8 @@ let dragSourceId = null;
 let dragItem = null; // { instanceId, fromHour } when moving a placed item
 
 function attachEvents() {
+  const btnPrint = document.getElementById('btnPrint');
+  if (btnPrint) btnPrint.addEventListener('click', () => window.print());
   const durInput = document.getElementById('inputDuration');
   const tgtInput = document.getElementById('inputTarget');
   if (durInput) durInput.addEventListener('input', e => {
