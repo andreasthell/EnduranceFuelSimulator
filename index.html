@@ -1516,20 +1516,36 @@ function drawChart() {
   for (let i = 0; i < n; i++) {
     const slotX = barsX + i * slotW + slotW * slotPad / 2;
 
-    // Carbs bar
+    // Carbs bar — stacked by source
     const cv = carbsData[i];
-    const pct = target > 0 ? cv / target : 1;
-    const carbsColor = cs.getPropertyValue('--primary').trim();
-    const cbH = chartH * (cv / maxCarbs);
-    const cx = slotX, cy = baseY - cbH;
-    if (cbH > 0) {
-      const r = Math.min(4, barW / 2, cbH);
-      ctx.fillStyle = carbsColor;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy + r); ctx.arcTo(cx, cy, cx + r, cy, r);
-      ctx.arcTo(cx + barW, cy, cx + barW, cy + r, r);
-      ctx.lineTo(cx + barW, cy + cbH); ctx.lineTo(cx, cy + cbH);
-      ctx.closePath(); ctx.fill();
+    const cx = slotX;
+    const segMap = {};
+    (state.timeline[String(i)] || []).forEach(item => {
+      const src = state.sources.find(s => s.id === item.sourceId);
+      if (src && src.carbs > 0) segMap[src.id] = (segMap[src.id] || 0) + src.carbs;
+    });
+    const segments = state.sources
+      .filter(src => segMap[src.id])
+      .map(src => ({ carbs: segMap[src.id], color: COLOR_PALETTE[state.sources.indexOf(src) % COLOR_PALETTE.length] }));
+    let stackY = baseY;
+    for (let s = 0; s < segments.length; s++) {
+      const seg = segments[s];
+      const segH = chartH * (seg.carbs / maxCarbs);
+      if (segH <= 0) continue;
+      const isTop = s === segments.length - 1;
+      const segY = stackY - segH;
+      ctx.fillStyle = seg.color;
+      if (isTop) {
+        const r = Math.min(4, barW / 2, segH);
+        ctx.beginPath();
+        ctx.moveTo(cx, segY + r); ctx.arcTo(cx, segY, cx + r, segY, r);
+        ctx.arcTo(cx + barW, segY, cx + barW, segY + r, r);
+        ctx.lineTo(cx + barW, segY + segH); ctx.lineTo(cx, segY + segH);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.fillRect(cx, segY, barW, segH);
+      }
+      stackY -= segH;
     }
 
     // Water bar
