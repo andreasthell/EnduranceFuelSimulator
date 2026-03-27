@@ -524,6 +524,12 @@
     }
     .btn-toggle-view:hover { border-color: var(--primary-light); color: var(--primary); }
     .btn-toggle-view.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .btn-clear-timeline {
+      font-size: 0.75rem; font-weight: 500; padding: 4px 10px;
+      border: 1.5px solid var(--border); border-radius: 20px;
+      background: none; color: var(--text-muted); cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-clear-timeline:hover { border-color: #e55; color: #e55; }
     .drop-zone.compact-mode {
       flex-direction: row;
       flex-wrap: wrap;
@@ -993,6 +999,8 @@ const TRANSLATIONS = {
     timelineTitle: 'Timeline',
     detailView: '\u229e Detail view',
     compactView: '\u229f Compact view',
+    clearTimeline: 'Clear timeline',
+    clearTimelineConfirm: 'Clear the entire timeline?',
     removeItem: 'Remove',
     carbsShort: 'g carbs',
     packingList: 'Packing List',
@@ -1066,6 +1074,8 @@ const TRANSLATIONS = {
     timelineTitle: 'Tidslinje',
     detailView: '\u229e Detaljvy',
     compactView: '\u229f Kompaktvy',
+    clearTimeline: 'Rensa tidslinje',
+    clearTimelineConfirm: 'Rensa hela tidslinjen?',
     removeItem: 'Ta bort',
     carbsShort: 'g kolh.',
     packingList: 'Packlista',
@@ -1417,7 +1427,10 @@ function renderMainArea() {
     <div class="timeline-card">
       <div class="timeline-header">
         <span>${t('timelineTitle')}</span>
-        <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? t('detailView') : t('compactView')}</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-clear-timeline" id="btnClearTimeline" title="${t('clearTimeline')}">&#x2715; ${t('clearTimeline')}</button>
+          <button class="btn-toggle-view ${state.compactTimeline ? 'active' : ''}" id="btnToggleView">${state.compactTimeline ? t('detailView') : t('compactView')}</button>
+        </div>
       </div>
       <div class="timeline-grid">${hourCols.join('')}</div>
     </div>
@@ -1632,6 +1645,12 @@ function attachEvents() {
   if (formWater) formWater.addEventListener('input', e => { state.formData.water = e.target.value; });
   const btnToggle = document.getElementById('btnToggleView');
   if (btnToggle) btnToggle.addEventListener('click', () => { state.compactTimeline = !state.compactTimeline; render(); });
+  const btnClear = document.getElementById('btnClearTimeline');
+  if (btnClear) btnClear.addEventListener('click', () => {
+    if (!confirm(t('clearTimelineConfirm'))) return;
+    Object.keys(state.timeline).forEach(h => { state.timeline[h] = []; });
+    saveState(); render();
+  });
 
   const btnAdd = document.getElementById('btnAddSource');
   if (btnAdd) btnAdd.addEventListener('click', () => {
