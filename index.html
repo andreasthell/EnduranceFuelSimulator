@@ -41,6 +41,8 @@
       --chart-water-text: #007b8a;
       --chart-hour-label: #6B7A99;
       --chart-target: #1565C0;
+      --chart-caffeine: #7C3AED;
+      --chart-caffeine-level: #A78BFA;
       --input-focus-bg: #fff;
     }
 
@@ -71,6 +73,8 @@
       --chart-water-text: #00ACC1;
       --chart-hour-label: #8A97B8;
       --chart-target: #5B9BD5;
+      --chart-caffeine: #8B5CF6;
+      --chart-caffeine-level: #C4B5FD;
       --input-focus-bg: #252C40;
     }
 
@@ -943,7 +947,7 @@ const state = {
   timeline: { "0": [], "1": [], "2": [] },
   nextSourceId: 5,
   nextInstanceId: 1,
-  formData: { name: '', carbs: '', water: '', icon: '' },
+  formData: { name: '', carbs: '', water: '', caffeine: '', icon: '' },
   compactTimeline: true,
   lang: 'en',
   theme: '',
@@ -1004,6 +1008,15 @@ const TRANSLATIONS = {
     clearTimeline: 'Clear timeline',
     clearTimelineConfirm: 'Clear the entire timeline?',
     removeItem: 'Remove',
+    caffeinePlaceholder: 'Caffeine (mg)',
+    caffeineHint: 'Caffeine mg (optional)',
+    totalCaffeine: 'Total caffeine',
+    mgCaffeine: 'mg caffeine',
+    peakLevel: 'Peak body level',
+    mgPeak: 'mg (est.)',
+    caffeineChartTitle: 'Caffeine intake & estimated body level',
+    caffeineIntakeLegend: 'Intake (mg)',
+    caffeineLevelLegend: 'Body level (5h half-life)',
     carbsShort: 'g carbs',
     packingList: 'Packing List',
     pcs: 'pcs',
@@ -1079,6 +1092,15 @@ const TRANSLATIONS = {
     clearTimeline: 'Rensa tidslinje',
     clearTimelineConfirm: 'Rensa hela tidslinjen?',
     removeItem: 'Ta bort',
+    caffeinePlaceholder: 'Koffein (mg)',
+    caffeineHint: 'Koffein mg (valfritt)',
+    totalCaffeine: 'Totalt koffein',
+    mgCaffeine: 'mg koffein',
+    peakLevel: 'Toppnivå i kroppen',
+    mgPeak: 'mg (uppsk.)',
+    caffeineChartTitle: 'Koffeinintag & uppskattad kroppsnivå',
+    caffeineIntakeLegend: 'Intag (mg)',
+    caffeineLevelLegend: 'Kroppsnivå (5h halveringstid)',
     carbsShort: 'g kolh.',
     packingList: 'Packlista',
     pcs: 'st',
@@ -1132,6 +1154,28 @@ function waterForHour(hourIndex) {
   }, 0);
 }
 
+function caffeineForHour(hourIndex) {
+  const items = state.timeline[String(hourIndex)] || [];
+  return items.reduce((sum, item) => {
+    const src = state.sources.find(s => s.id === item.sourceId);
+    return sum + (src ? (src.caffeine || 0) : 0);
+  }, 0);
+}
+
+const CAFFEINE_HALF_LIFE = 5; // hours
+
+function caffeineBodyLevel(atHour) {
+  // Estimated caffeine mg remaining in body at the END of atHour (0-based)
+  let level = 0;
+  for (let h = 0; h <= atHour; h++) {
+    const dose = caffeineForHour(h);
+    if (dose <= 0) continue;
+    const elapsed = atHour - h + 1; // hours elapsed from start of hour h to end of atHour
+    level += dose * Math.pow(2, -elapsed / CAFFEINE_HALF_LIFE);
+  }
+  return Math.round(level);
+}
+
 function syncTimeline() {
   const newTimeline = {};
   for (let i = 0; i < state.raceDuration; i++) {
@@ -1183,6 +1227,7 @@ function applyTheme(theme) {
   const btn = document.getElementById('btnTheme');
   if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
   drawChart();
+  drawCaffeineChart();
 }
 
 function render() {
@@ -1224,6 +1269,9 @@ function renderLeftPanel() {
                 <div style="flex:1;"><input class="text-input" type="number" id="editCarbs-${src.id}" value="${src.carbs}" min="0" max="999" step="1" /><div class="form-hint" style="margin-top:3px;">${t('carbsHint')}</div></div>
                 <div style="flex:1;"><input class="text-input" type="number" id="editWater-${src.id}" value="${src.water}" min="0" max="9999" step="10" /><div class="form-hint" style="margin-top:3px;">${t('waterHint')}</div></div>
               </div>
+              <div class="form-row">
+                <div style="flex:1;"><input class="text-input" type="number" id="editCaffeine-${src.id}" value="${src.caffeine || ''}" min="0" max="9999" step="1" placeholder="${t('caffeinePlaceholder')}" /><div class="form-hint" style="margin-top:3px;">${t('caffeineHint')}</div></div>
+              </div>
               <div style="display:flex;gap:6px;">
                 <button class="btn-primary" data-action="save-source" data-source-id="${src.id}" style="flex:1;">${t('saveSource')}</button>
                 <button class="btn-cancel" data-action="cancel-edit">${t('cancelEdit')}</button>
@@ -1238,7 +1286,7 @@ function renderLeftPanel() {
             </div>
             <div class="source-card-info">
               <div class="source-card-name">${escapeHtml(src.name)}</div>
-              <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} ${t('carbsShort')}` : ''}${src.water > 0 ? `${src.carbs > 0 ? ' &bull; ' : ''}${src.water} ml` : ''}</div>
+              <div class="source-card-meta">${src.carbs > 0 ? `${src.carbs} ${t('carbsShort')}` : ''}${src.water > 0 ? `${src.carbs > 0 ? ' &bull; ' : ''}${src.water} ml` : ''}${(src.caffeine || 0) > 0 ? `${(src.carbs > 0 || src.water > 0) ? ' &bull; ' : ''}${src.caffeine}mg ☕` : ''}</div>
             </div>
             <button class="btn-icon btn-pack-toggle ${src.pack !== false ? 'active' : ''}" data-action="toggle-pack" data-source-id="${src.id}" title="${src.pack !== false ? t('excludeFromPacking') : t('includeInPacking')}">&#x1F4E6;</button>
             <button class="btn-icon" data-action="delete-source" data-source-id="${src.id}" title="${t('removeSource')}">&#x2715;</button>
@@ -1302,6 +1350,12 @@ function renderLeftPanel() {
             <div class="form-hint" style="margin-top:3px;">${t('waterHint')}</div>
           </div>
         </div>
+        <div class="form-row">
+          <div style="flex:1;">
+            <input class="text-input" type="number" id="formCaffeine" placeholder="${t('caffeinePlaceholder')}" min="0" max="9999" step="1" value="${escapeHtml(state.formData.caffeine)}" />
+            <div class="form-hint" style="margin-top:3px;">${t('caffeineHint')}</div>
+          </div>
+        </div>
         <button class="btn-primary" id="btnAddSource">${t('addSourceBtn')}</button>
       </div>
     </div>
@@ -1315,11 +1369,12 @@ function renderLeftPanel() {
 
 function renderMainArea() {
   const main = document.getElementById('mainArea');
-  let totalCarbs = 0, totalWater = 0, hoursMeet = 0;
+  let totalCarbs = 0, totalWater = 0, totalCaffeine = 0, hoursMeet = 0;
   for (let i = 0; i < state.raceDuration; i++) {
     const hc = carbsForHour(i);
     totalCarbs += hc;
     if (hc >= state.targetCarbsPerHour) hoursMeet++;
+    totalCaffeine += caffeineForHour(i);
     const items = state.timeline[String(i)] || [];
     items.forEach(item => {
       const src = state.sources.find(s => s.id === item.sourceId);
@@ -1328,6 +1383,8 @@ function renderMainArea() {
   }
   const avgCarbsPerHour = state.raceDuration > 0 ? (totalCarbs / state.raceDuration).toFixed(1) : 0;
   const avgWaterPerHour = state.raceDuration > 0 ? Math.round(totalWater / state.raceDuration) : 0;
+  const hasCaffeineData = state.sources.some(s => (s.caffeine || 0) > 0);
+  const peakBodyLevel = hasCaffeineData ? Math.max(...Array.from({length: state.raceDuration}, (_, i) => caffeineBodyLevel(i)), 0) : 0;
 
   const summaryHtml = `
     <div class="summary-grid">
@@ -1347,7 +1404,22 @@ function renderMainArea() {
         </div>
       </div>
       <canvas id="barChart"></canvas>
-    </div>`;
+    </div>
+    ${hasCaffeineData ? `
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">${t('caffeineChartTitle')}</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--chart-caffeine)"></div>${t('caffeineIntakeLegend')}</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--chart-caffeine-level);border-radius:50%;"></div>${t('caffeineLevelLegend')}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;padding:0 4px 8px;flex-wrap:wrap;">
+        <div style="font-size:0.8rem;color:var(--text-muted);">${t('totalCaffeine')}: <strong style="color:var(--chart-caffeine);">${totalCaffeine} mg</strong></div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">${t('peakLevel')}: <strong style="color:var(--chart-caffeine-level);">${peakBodyLevel} ${t('mgPeak')}</strong></div>
+      </div>
+      <canvas id="caffeineChart"></canvas>
+    </div>` : ''}`;
 
   const hourCols = [];
   for (let i = 0; i < state.raceDuration; i++) {
@@ -1389,7 +1461,8 @@ function renderMainArea() {
     totalPackCount += count;
     const totalCarbs = src.carbs * count;
     const totalWater = src.water * count;
-    const sub = [totalCarbs > 0 ? `${totalCarbs}${t('carbsShort')}` : '', totalWater > 0 ? `${totalWater}ml` : ''].filter(Boolean).join(' · ');
+    const totalCaffeineForSrc = (src.caffeine || 0) * count;
+    const sub = [totalCarbs > 0 ? `${totalCarbs}${t('carbsShort')}` : '', totalWater > 0 ? `${totalWater}ml` : '', totalCaffeineForSrc > 0 ? `${totalCaffeineForSrc}mg ☕` : ''].filter(Boolean).join(' · ');
     const icon = src.icon || escapeHtml(src.name[0].toUpperCase());
     return `<div class="receipt-row"><span class="receipt-name">${icon} ${escapeHtml(src.name)}</span><span class="receipt-qty">${count} ${t('pcs')}</span></div>${sub ? `<div class="receipt-sub">${sub}</div>` : ''}`;
   });
@@ -1412,7 +1485,8 @@ function renderMainArea() {
       const src = state.sources.find(s => s.id === item.sourceId);
       return src ? (src.icon || escapeHtml(src.name[0].toUpperCase())) : '';
     }).join('');
-    const stats = [hc > 0 ? hc + 'g' : '', hw > 0 ? hw + 'ml' : ''].filter(Boolean).join(' · ');
+    const hcaff = caffeineForHour(i);
+    const stats = [hc > 0 ? hc + 'g' : '', hw > 0 ? hw + 'ml' : '', hasCaffeineData && hcaff > 0 ? hcaff + 'mg ☕' : ''].filter(Boolean).join(' · ');
     planRows.push(`<div class="plan-hour-row">
       <span class="plan-hour-label">T${i + 1}</span>
       <span class="plan-hour-icons">${icons || '<span style="color:var(--text-muted)">—</span>'}</span>
@@ -1443,7 +1517,7 @@ function renderMainArea() {
       <div class="print-row">${packHtml}${planHtml}</div>
     </div>`;
 
-  requestAnimationFrame(() => drawChart());
+  requestAnimationFrame(() => { drawChart(); drawCaffeineChart(); });
 }
 
 function drawChart() {
@@ -1639,6 +1713,121 @@ function drawChart() {
   }
 }
 
+function drawCaffeineChart() {
+  const canvas = document.getElementById('caffeineChart');
+  if (!canvas) return;
+  const cs = getComputedStyle(document.documentElement);
+  const caffeineColor  = cs.getPropertyValue('--chart-caffeine').trim();
+  const levelColor     = cs.getPropertyValue('--chart-caffeine-level').trim();
+  const gridColor      = cs.getPropertyValue('--chart-grid').trim();
+  const hourLabelColor = cs.getPropertyValue('--chart-hour-label').trim();
+  const textColor      = cs.getPropertyValue('--chart-carbs-text').trim();
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.display = 'block';
+  canvas.style.width = '100%';
+  const W = canvas.offsetWidth || 600;
+  const H = 180;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const n = state.raceDuration;
+  const intakeData = [];
+  const levelData  = [];
+  for (let i = 0; i < n; i++) {
+    intakeData.push(caffeineForHour(i));
+    levelData.push(caffeineBodyLevel(i));
+  }
+  const maxVal = Math.max(...intakeData, ...levelData, 50);
+
+  const PAD_L = 44, PAD_R = 20, PAD_T = 14, PAD_B = 44;
+  const BAR_OFFSET = 48;
+  const barsX  = PAD_L + BAR_OFFSET;
+  const barsW  = W - barsX - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const baseY  = PAD_T + chartH;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines + axis labels
+  for (let g = 0; g <= 4; g++) {
+    const y = baseY - (g / 4) * chartH;
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = caffeineColor;
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round((g / 4) * maxVal) + 'mg', PAD_L - 4, y + 4);
+  }
+
+  const slotPad = 0.18;
+  const slotW   = n > 0 ? barsW / n : 0;
+  const availW  = slotW * (1 - slotPad);
+  const barW    = availW * 0.5;
+
+  // Intake bars
+  for (let i = 0; i < n; i++) {
+    const slotX = barsX + i * slotW + slotW * slotPad / 2;
+    const iv    = intakeData[i];
+    const bH    = chartH * (iv / maxVal);
+    const bx    = slotX + (availW - barW) / 2;
+    const by    = baseY - bH;
+    if (bH > 0) {
+      const r = Math.min(4, barW / 2, bH);
+      ctx.fillStyle = caffeineColor + 'BB';
+      ctx.beginPath();
+      ctx.moveTo(bx, by + r); ctx.arcTo(bx, by, bx + r, by, r);
+      ctx.arcTo(bx + barW, by, bx + barW, by + r, r);
+      ctx.lineTo(bx + barW, by + bH); ctx.lineTo(bx, by + bH);
+      ctx.closePath(); ctx.fill();
+    }
+    if (barW >= 22 && iv > 0) {
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = textColor;
+      ctx.fillText(iv + 'mg', bx + barW / 2, baseY + 13);
+    }
+    if (slotW >= 28) {
+      ctx.fillStyle = hourLabelColor;
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('T' + (i + 1), slotX + availW / 2, baseY + 28);
+    }
+  }
+
+  // Body level line
+  if (n > 0) {
+    ctx.save();
+    ctx.strokeStyle = levelColor;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const slotX = barsX + i * slotW + slotW * slotPad / 2;
+      const midX  = slotX + availW / 2;
+      const ly    = baseY - chartH * (levelData[i] / maxVal);
+      if (i === 0) ctx.moveTo(midX, ly); else ctx.lineTo(midX, ly);
+    }
+    ctx.stroke();
+    ctx.restore();
+    // Dots on line
+    for (let i = 0; i < n; i++) {
+      const slotX = barsX + i * slotW + slotW * slotPad / 2;
+      const midX  = slotX + availW / 2;
+      const ly    = baseY - chartH * (levelData[i] / maxVal);
+      ctx.fillStyle = levelColor;
+      ctx.beginPath();
+      ctx.arc(midX, ly, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
 let dragSourceId = null;
 let dragItem = null; // { instanceId, fromHour } when moving a placed item
 
@@ -1688,6 +1877,8 @@ function attachEvents() {
   if (formName)  formName.addEventListener('input',  e => { state.formData.name  = e.target.value; });
   if (formCarbs) formCarbs.addEventListener('input', e => { state.formData.carbs = e.target.value; });
   if (formWater) formWater.addEventListener('input', e => { state.formData.water = e.target.value; });
+  const formCaffeine = document.getElementById('formCaffeine');
+  if (formCaffeine) formCaffeine.addEventListener('input', e => { state.formData.caffeine = e.target.value; });
   const btnToggle = document.getElementById('btnToggleView');
   if (btnToggle) btnToggle.addEventListener('click', () => { state.compactTimeline = !state.compactTimeline; render(); });
   const btnClear = document.getElementById('btnClearTimeline');
@@ -1702,12 +1893,13 @@ function attachEvents() {
     const name  = state.formData.name.trim();
     const carbs = state.formData.carbs === '' ? 0 : parseInt(state.formData.carbs, 10);
     const water = parseInt(state.formData.water, 10);
+    const caffeine = state.formData.caffeine === '' ? 0 : parseInt(state.formData.caffeine, 10);
     if (!name || isNaN(carbs) || carbs < 0) {
       if (formName) { formName.focus(); formName.style.borderColor = '#E53935'; setTimeout(() => formName.style.borderColor = '', 1200); }
       return;
     }
-    state.sources.push({ id: state.nextSourceId++, name, carbs, water: isNaN(water) ? 0 : Math.max(0, water), icon: state.formData.icon.trim(), pack: true });
-    state.formData = { name: '', carbs: '', water: '', icon: '' };
+    state.sources.push({ id: state.nextSourceId++, name, carbs, water: isNaN(water) ? 0 : Math.max(0, water), caffeine: isNaN(caffeine) ? 0 : Math.max(0, caffeine), icon: state.formData.icon.trim(), pack: true });
+    state.formData = { name: '', carbs: '', water: '', caffeine: '', icon: '' };
     render();
   });
   document.querySelectorAll('[data-action="step-num"]').forEach(btn => {
@@ -1740,15 +1932,17 @@ function attachEvents() {
       const sid  = parseInt(btn.dataset.sourceId, 10);
       const src  = state.sources.find(s => s.id === sid);
       if (!src) return;
-      const name  = document.getElementById(`editName-${sid}`)?.value.trim();
-      const carbs = parseInt(document.getElementById(`editCarbs-${sid}`)?.value, 10);
-      const water = parseInt(document.getElementById(`editWater-${sid}`)?.value, 10);
-      const icon  = document.getElementById(`editIcon-${sid}`)?.value.trim();
+      const name     = document.getElementById(`editName-${sid}`)?.value.trim();
+      const carbs    = parseInt(document.getElementById(`editCarbs-${sid}`)?.value, 10);
+      const water    = parseInt(document.getElementById(`editWater-${sid}`)?.value, 10);
+      const caffeine = parseInt(document.getElementById(`editCaffeine-${sid}`)?.value, 10);
+      const icon     = document.getElementById(`editIcon-${sid}`)?.value.trim();
       if (!name || isNaN(carbs) || carbs < 0) return;
-      src.name  = name;
-      src.carbs = carbs;
-      src.water = isNaN(water) ? 0 : Math.max(0, water);
-      src.icon  = icon;
+      src.name     = name;
+      src.carbs    = carbs;
+      src.water    = isNaN(water) ? 0 : Math.max(0, water);
+      src.caffeine = isNaN(caffeine) ? 0 : Math.max(0, caffeine);
+      src.icon     = icon;
       state.editingSourceId = null;
       render();
     });
@@ -1830,7 +2024,7 @@ function attachEvents() {
   });
 }
 
-window.addEventListener('resize', () => drawChart());
+window.addEventListener('resize', () => { drawChart(); drawCaffeineChart(); });
 loadState();
 if (!state.theme) {
   state.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -1896,7 +2090,7 @@ function openPicker(hour) {
     list.innerHTML = state.sources.map((src, idx) => {
       const color = COLOR_PALETTE[idx % COLOR_PALETTE.length];
       const icon  = src.icon || escapeHtml(src.name[0].toUpperCase());
-      const meta  = [src.carbs > 0 ? src.carbs + t('carbsShort') : '', src.water > 0 ? src.water + ' ml' : ''].filter(Boolean).join(' · ');
+      const meta  = [src.carbs > 0 ? src.carbs + t('carbsShort') : '', src.water > 0 ? src.water + ' ml' : '', (src.caffeine || 0) > 0 ? src.caffeine + 'mg ☕' : ''].filter(Boolean).join(' · ');
       return `<button class="picker-item" data-source-id="${src.id}">
         <span class="picker-item-icon" style="background:${color}22;">${icon}</span>
         <span class="picker-item-name">${escapeHtml(src.name)}</span>
