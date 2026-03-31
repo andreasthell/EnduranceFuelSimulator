@@ -1014,9 +1014,7 @@ const TRANSLATIONS = {
     mgCaffeine: 'mg caffeine',
     peakLevel: 'Peak body level',
     mgPeak: 'mg (est.)',
-    caffeineChartTitle: 'Caffeine intake & estimated body level',
-    caffeineIntakeLegend: 'Intake (mg)',
-    caffeineLevelLegend: 'Body level (5h half-life)',
+    caffeineLevelLegend: 'Caffeine body level',
     carbsShort: 'g carbs',
     packingList: 'Packing List',
     pcs: 'pcs',
@@ -1098,9 +1096,7 @@ const TRANSLATIONS = {
     mgCaffeine: 'mg koffein',
     peakLevel: 'Toppnivå i kroppen',
     mgPeak: 'mg (uppsk.)',
-    caffeineChartTitle: 'Koffeinintag & uppskattad kroppsnivå',
-    caffeineIntakeLegend: 'Intag (mg)',
-    caffeineLevelLegend: 'Kroppsnivå (5h halveringstid)',
+    caffeineLevelLegend: 'Koffein i kroppen',
     carbsShort: 'g kolh.',
     packingList: 'Packlista',
     pcs: 'st',
@@ -1227,7 +1223,6 @@ function applyTheme(theme) {
   const btn = document.getElementById('btnTheme');
   if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
   drawChart();
-  drawCaffeineChart();
 }
 
 function render() {
@@ -1401,25 +1396,12 @@ function renderMainArea() {
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div>${t('carbTarget')}</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--chart-water)"></div>${t('legendWater')}</div>
+          ${hasCaffeineData ? `<div class="legend-item"><div class="legend-dot" style="background:var(--chart-caffeine-level);border-radius:50%;"></div>${t('caffeineLevelLegend')}</div>` : ''}
         </div>
       </div>
+      ${hasCaffeineData ? `<div style="display:flex;gap:16px;padding:0 4px 8px;flex-wrap:wrap;"><div style="font-size:0.8rem;color:var(--text-muted);">${t('totalCaffeine')}: <strong style="color:var(--chart-caffeine);">${totalCaffeine} mg</strong></div><div style="font-size:0.8rem;color:var(--text-muted);">${t('peakLevel')}: <strong style="color:var(--chart-caffeine-level);">${peakBodyLevel} ${t('mgPeak')}</strong></div></div>` : ''}
       <canvas id="barChart"></canvas>
-    </div>
-    ${hasCaffeineData ? `
-    <div class="chart-card">
-      <div class="chart-header">
-        <div class="chart-title">${t('caffeineChartTitle')}</div>
-        <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--chart-caffeine)"></div>${t('caffeineIntakeLegend')}</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--chart-caffeine-level);border-radius:50%;"></div>${t('caffeineLevelLegend')}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:16px;padding:0 4px 8px;flex-wrap:wrap;">
-        <div style="font-size:0.8rem;color:var(--text-muted);">${t('totalCaffeine')}: <strong style="color:var(--chart-caffeine);">${totalCaffeine} mg</strong></div>
-        <div style="font-size:0.8rem;color:var(--text-muted);">${t('peakLevel')}: <strong style="color:var(--chart-caffeine-level);">${peakBodyLevel} ${t('mgPeak')}</strong></div>
-      </div>
-      <canvas id="caffeineChart"></canvas>
-    </div>` : ''}`;
+    </div>`;
 
   const hourCols = [];
   for (let i = 0; i < state.raceDuration; i++) {
@@ -1517,7 +1499,7 @@ function renderMainArea() {
       <div class="print-row">${packHtml}${planHtml}</div>
     </div>`;
 
-  requestAnimationFrame(() => { drawChart(); drawCaffeineChart(); });
+  requestAnimationFrame(() => drawChart());
 }
 
 function drawChart() {
@@ -1551,16 +1533,18 @@ function drawChart() {
   }
   const cs = getComputedStyle(document.documentElement);
   const C = {
-    grid:      cs.getPropertyValue('--chart-grid').trim(),
-    carbsAxis: cs.getPropertyValue('--chart-carbs-axis').trim(),
-    water:     cs.getPropertyValue('--chart-water').trim(),
-    carbsText: cs.getPropertyValue('--chart-carbs-text').trim(),
-    waterText: cs.getPropertyValue('--chart-water-text').trim(),
-    hourLabel: cs.getPropertyValue('--chart-hour-label').trim(),
-    target:    cs.getPropertyValue('--chart-target').trim(),
-    green:     cs.getPropertyValue('--green-bar').trim(),
-    orange:    cs.getPropertyValue('--orange-bar').trim(),
-    red:       cs.getPropertyValue('--red-bar').trim(),
+    grid:           cs.getPropertyValue('--chart-grid').trim(),
+    carbsAxis:      cs.getPropertyValue('--chart-carbs-axis').trim(),
+    water:          cs.getPropertyValue('--chart-water').trim(),
+    carbsText:      cs.getPropertyValue('--chart-carbs-text').trim(),
+    waterText:      cs.getPropertyValue('--chart-water-text').trim(),
+    hourLabel:      cs.getPropertyValue('--chart-hour-label').trim(),
+    target:         cs.getPropertyValue('--chart-target').trim(),
+    green:          cs.getPropertyValue('--green-bar').trim(),
+    orange:         cs.getPropertyValue('--orange-bar').trim(),
+    red:            cs.getPropertyValue('--red-bar').trim(),
+    caffeine:       cs.getPropertyValue('--chart-caffeine').trim(),
+    caffeineLevel:  cs.getPropertyValue('--chart-caffeine-level').trim(),
   };
   const dpr = window.devicePixelRatio || 1;
   canvas.style.display = 'block';
@@ -1576,15 +1560,18 @@ function drawChart() {
   const n = state.raceDuration;
   const target = state.targetCarbsPerHour;
   const waterTarget = state.targetWaterPerHour;
-  const carbsData = [], waterData = [];
+  const hasCaffeine = state.sources.some(s => (s.caffeine || 0) > 0);
+  const carbsData = [], waterData = [], caffeineLevel = [];
   for (let i = 0; i < n; i++) {
     carbsData.push(carbsForHour(i));
     waterData.push(waterForHour(i));
+    if (hasCaffeine) caffeineLevel.push(caffeineBodyLevel(i));
   }
   const maxCarbs = Math.max(target * 1.3, ...carbsData, 10);
   const maxWater = Math.max(waterTarget * 1.3, ...waterData, 100);
+  const maxCaffeine = hasCaffeine ? Math.max(...caffeineLevel, 50) : 0;
 
-  const PAD_L = 44, PAD_R = 44, PAD_T = 14, PAD_B = 44;
+  const PAD_L = 44, PAD_R = hasCaffeine ? 80 : 44, PAD_T = 14, PAD_B = 44;
   const BAR_OFFSET = 48; // gap before first bar — target label lives here
   const barsX = PAD_L + BAR_OFFSET;
   const barsW = W - barsX - PAD_R;
@@ -1606,6 +1593,11 @@ function drawChart() {
     ctx.fillStyle = C.water;
     ctx.textAlign = 'left';
     ctx.fillText(Math.round((g / 4) * maxWater) + 'ml', W - PAD_R + 4, y + 4);
+    if (hasCaffeine) {
+      ctx.fillStyle = C.caffeineLevel;
+      ctx.textAlign = 'left';
+      ctx.fillText(Math.round((g / 4) * maxCaffeine) + 'mg', W - 38, y + 4);
+    }
   }
 
   // Grouped bars
@@ -1711,116 +1703,28 @@ function drawChart() {
     ctx.textAlign = 'right';
     ctx.fillText(waterTarget + 'ml', W - PAD_R - 2, wy - 4);
   }
-}
 
-function drawCaffeineChart() {
-  const canvas = document.getElementById('caffeineChart');
-  if (!canvas) return;
-  const cs = getComputedStyle(document.documentElement);
-  const caffeineColor  = cs.getPropertyValue('--chart-caffeine').trim();
-  const levelColor     = cs.getPropertyValue('--chart-caffeine-level').trim();
-  const gridColor      = cs.getPropertyValue('--chart-grid').trim();
-  const hourLabelColor = cs.getPropertyValue('--chart-hour-label').trim();
-  const textColor      = cs.getPropertyValue('--chart-carbs-text').trim();
-
-  const dpr = window.devicePixelRatio || 1;
-  canvas.style.display = 'block';
-  canvas.style.width = '100%';
-  const W = canvas.offsetWidth || 600;
-  const H = 180;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.height = H + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const n = state.raceDuration;
-  const intakeData = [];
-  const levelData  = [];
-  for (let i = 0; i < n; i++) {
-    intakeData.push(caffeineForHour(i));
-    levelData.push(caffeineBodyLevel(i));
-  }
-  const maxVal = Math.max(...intakeData, ...levelData, 50);
-
-  const PAD_L = 44, PAD_R = 20, PAD_T = 14, PAD_B = 44;
-  const BAR_OFFSET = 48;
-  const barsX  = PAD_L + BAR_OFFSET;
-  const barsW  = W - barsX - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
-  const baseY  = PAD_T + chartH;
-
-  ctx.clearRect(0, 0, W, H);
-
-  // Grid lines + axis labels
-  for (let g = 0; g <= 4; g++) {
-    const y = baseY - (g / 4) * chartH;
-    ctx.strokeStyle = gridColor;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
-    ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillStyle = caffeineColor;
-    ctx.textAlign = 'right';
-    ctx.fillText(Math.round((g / 4) * maxVal) + 'mg', PAD_L - 4, y + 4);
-  }
-
-  const slotPad = 0.18;
-  const slotW   = n > 0 ? barsW / n : 0;
-  const availW  = slotW * (1 - slotPad);
-  const barW    = availW * 0.5;
-
-  // Intake bars
-  for (let i = 0; i < n; i++) {
-    const slotX = barsX + i * slotW + slotW * slotPad / 2;
-    const iv    = intakeData[i];
-    const bH    = chartH * (iv / maxVal);
-    const bx    = slotX + (availW - barW) / 2;
-    const by    = baseY - bH;
-    if (bH > 0) {
-      const r = Math.min(4, barW / 2, bH);
-      ctx.fillStyle = caffeineColor + 'BB';
-      ctx.beginPath();
-      ctx.moveTo(bx, by + r); ctx.arcTo(bx, by, bx + r, by, r);
-      ctx.arcTo(bx + barW, by, bx + barW, by + r, r);
-      ctx.lineTo(bx + barW, by + bH); ctx.lineTo(bx, by + bH);
-      ctx.closePath(); ctx.fill();
-    }
-    if (barW >= 22 && iv > 0) {
-      ctx.font = 'bold 10px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = textColor;
-      ctx.fillText(iv + 'mg', bx + barW / 2, baseY + 13);
-    }
-    if (slotW >= 28) {
-      ctx.fillStyle = hourLabelColor;
-      ctx.font = '11px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('T' + (i + 1), slotX + availW / 2, baseY + 28);
-    }
-  }
-
-  // Body level line
-  if (n > 0) {
+  // Caffeine body level line
+  if (hasCaffeine && n > 0) {
     ctx.save();
-    ctx.strokeStyle = levelColor;
+    ctx.strokeStyle = C.caffeineLevel;
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.beginPath();
     for (let i = 0; i < n; i++) {
       const slotX = barsX + i * slotW + slotW * slotPad / 2;
-      const midX  = slotX + availW / 2;
-      const ly    = baseY - chartH * (levelData[i] / maxVal);
+      const midX = slotX + availW / 2;
+      const ly = baseY - chartH * (caffeineLevel[i] / maxCaffeine);
       if (i === 0) ctx.moveTo(midX, ly); else ctx.lineTo(midX, ly);
     }
     ctx.stroke();
     ctx.restore();
-    // Dots on line
     for (let i = 0; i < n; i++) {
       const slotX = barsX + i * slotW + slotW * slotPad / 2;
-      const midX  = slotX + availW / 2;
-      const ly    = baseY - chartH * (levelData[i] / maxVal);
-      ctx.fillStyle = levelColor;
+      const midX = slotX + availW / 2;
+      const ly = baseY - chartH * (caffeineLevel[i] / maxCaffeine);
+      ctx.fillStyle = C.caffeineLevel;
       ctx.beginPath();
       ctx.arc(midX, ly, 3.5, 0, Math.PI * 2);
       ctx.fill();
@@ -2024,7 +1928,7 @@ function attachEvents() {
   });
 }
 
-window.addEventListener('resize', () => { drawChart(); drawCaffeineChart(); });
+window.addEventListener('resize', () => drawChart());
 loadState();
 if (!state.theme) {
   state.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
